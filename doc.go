@@ -77,7 +77,7 @@ Handlers can filter records, format them, or dispatch to multiple other Handlers
 This package implements a number of Handlers for common logging patterns that are
 can be easily composed to create flexible, custom logging structures.
 
-Here's an example handler that prints logfmt ouput to Stdout:
+Here's an example handler that prints logfmt output to Stdout:
 
     handler := log.StreamHandler(os.Stdout, log.LogfmtFormat())
 
@@ -210,6 +210,62 @@ Users of your library may then enable it if they like:
         handler := // custom handler setup
         yourlib.Log.SetHandler(handler)
     }
+
+Best practices attaching logger context
+
+The ability to attach context to a logger is a powerful one. Where should you do it and why?
+I favor embedding a Logger directly into any persistent object in my application and adding 
+unique, tracing context keys to it. For instance, imagine I am writing a web browser:
+
+    type Tab struct {
+        url string
+        render *RenderingContext
+        // ...
+
+        Logger
+    }
+
+    func NewTab(url string) *Tab {
+        return &Tab {
+            // ...
+            url: url,
+
+            Logger: log.New("url", url),
+        }
+    }
+
+When a new tab is created, I assign a logger to it with the url of
+the tab as context so it can easily be traced through the logs.
+Now, whenever we perform any operation with the tab, we'll log with its
+embedded logger and it will include the tab title automatically:
+
+    tab.Debug("moved position", "idx", tab.idx)
+
+There's only one problem. What if the tab url changes? We could
+use log.Lazy to make sure the current url is always written, but that
+would mean that we couldn't trace a tab's full lifetime through our
+logs after the user navigate to a new URL.
+
+Instead, think about what values to attach to your loggers the
+same way you think about what to use as a key in a SQL database schema.
+If it's possible to use a natural key that is unique for the lifetime of the
+object, do so. But otherwise, log15's ext package has a handy RandId
+function to let you generate when you might call "surrogate keys"
+They're just random hex identifiers to use for tracing. Back to our
+Tab example, we would prefer to set up our Logger like so:
+
+        import logext "github.com/inconshreveable/log15/ext"
+
+        t := &Tab {
+            // ...
+            url: url,
+        }
+
+        t.Logger = log.New("id", logext.RandId(8), "url", log.Lazy(t.getUrl))
+        return t
+    
+Now we'll have a unique traceable identifier even across loading new urls, but
+we'll still be able to see the tab's current url in the log messages.
 
 Must
 
