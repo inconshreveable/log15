@@ -139,6 +139,26 @@ func TestMultiHandler(t *testing.T) {
 
 }
 
+type waitHandler struct {
+	ch chan Record
+}
+
+func (h *waitHandler) Log(r *Record) error {
+	h.ch <- *r
+	return nil
+}
+
+func TestBufferedHandler(t *testing.T) {
+	ch := make(chan Record)
+	l := New()
+	l.SetHandler(BufferedHandler(0, &waitHandler{ch}))
+
+	l.Debug("buffer")
+	if r := <-ch; r.Msg != "buffer" {
+		t.Fatalf("wrong value for r.Msg. Got %s expected %s", r.Msg, "")
+	}
+}
+
 func TestLogContext(t *testing.T) {
 	l, r := testLogger()
 	l = l.New("foo", "bar")

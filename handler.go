@@ -217,10 +217,12 @@ func (h bufferedHandler) run() {
 // writes happen asynchronously, all writes to a BufferedHandler
 // never return an error and any errors from the wrapped handler are ignored.
 func BufferedHandler(bufSize int, h Handler) Handler {
-	return &bufferedHandler{
+	handler := &bufferedHandler{
 		handler: h,
 		recs:    make(chan *Record, bufSize),
 	}
+	go handler.run()
+	return handler
 }
 
 // swapHandler wraps another handler that may swapped out
