@@ -1,0 +1,340 @@
+package log15
+
+import (
+	"fmt"
+	"io"
+	"net"
+	"os"
+	"reflect"
+	"sync"
+)
+
+// A Logger prints its log records by writing to a Handler.
+// The Handler interface defines where and how log records are written.
+// Handlers are composable, providing you great flexibility in combining
+// them to achieve the logging structure that suits your applications.
+type Handler interface {
+	Log(r *Record) error
+}
+
+type streamHandler struct {
+	wr   io.Writer
+	fmtr Format
+}
+
+// StreamHandler writes log records to an io.Writer
+// with the given format. StreamHandler can be used
+// to easily begin writing log records to other
+// outputs.
+func StreamHandler(wr io.Writer, fmtr Format) Handler {
+	return lazyHandler{&streamHandler{wr, fmtr}}
+}
+
+func (h *streamHandler) Log(r *Record) error {
+	_, err := h.wr.Write(h.fmtr.Format(r))
+	return err
+}
+
+type safeHandler struct {
+	Handler
+	mu sync.Mutex
+}
+
+func (h *safeHandler) Log(r *Record) error {
+	h.mu.Lock()
+	err := h.Handler.Log(r)
+	h.mu.Unlock()
+	return err
+}
+
+// FileHandler returns a handler which writes log records to the give file
+// using the given format. If the path
+// already exists, FileHandler will append to the given file. If it does not,
+// FileHandler will create the file with mode 0644.
+func FileHandler(path string, fmtr Format) (Handler, error) {
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, err
+	}
+	return closingHandler{f, &streamHandler{f, fmtr}}, nil
+}
+
+// NetHandler opens a socket to the given address and writes records
+// over the connection.
+func NetHandler(network, addr string, fmtr Format) (Handler, error) {
+	conn, err := net.Dial(network, addr)
+	if err != nil {
+		return nil, err
+	}
+
+	return closingHandler{conn, &streamHandler{conn, fmtr}}, nil
+}
+
+type closingHandler struct {
+	io.WriteCloser
+	Handler
+}
+
+func (h *closingHandler) Close() error {
+	return h.WriteCloser.Close()
+}
+
+type filterHandler struct {
+	Handler
+	fn func(r *Record) (skip bool)
+}
+
+func (h *filterHandler) Log(r *Record) error {
+	if !h.fn(r) {
+		return h.Handler.Log(r)
+	}
+	return nil
+}
+
+// FilterHandler returns a Handler that only writes records
+// to the wrapped Handler if the given key in the logged
+// context matches the value. For example, to only log records
+// from your ui package:
+//
+//    log.FilterHandler("pkg", "app/ui", log.StdoutHandler)
+//
+func FilterHandler(key string, value interface{}, h Handler) Handler {
+	return &filterHandler{
+		Handler: h,
+		fn: func(r *Record) (skip bool) {
+			switch key {
+			case "lvl":
+				return r.Lvl == value
+			case "t":
+				return r.Time == value
+			case "msg":
+				return r.Msg == value
+			}
+
+			for i := 0; i < len(r.Ctx); i += 2 {
+				if r.Ctx[i] == key {
+					return r.Ctx[i+1] != value
+				}
+			}
+			return true
+		},
+	}
+}
+
+// LvlFilter returns a Handler that only writes
+// records which are less than the given verbosity
+// level to the wrapped Handler. For example, to only
+// log Error/Crit records:
+//
+//     log.LvlFilterHandler(log.Error, log.StdoutHandler)
+//
+func LvlFilterHandler(maxLvl Lvl, h Handler) Handler {
+	return &filterHandler{
+		Handler: h,
+		fn: func(r *Record) (skip bool) {
+			return r.Lvl > maxLvl
+		},
+	}
+}
+
+type multiHandler []Handler
+
+func (mh multiHandler) Log(r *Record) error {
+	for _, h := range mh {
+		// what to do about failures?
+		h.Log(r)
+	}
+	return nil
+}
+
+// A MultiHandler dispatches any write to each of its handlers.
+// This is useful for writing different types of log information
+// to different locations. For example, to log to a file and
+// standard error:
+//
+//     log.MultiHandler(
+//         log.MustFileHandler("/var/log/app.log", log.LogfmtFormat()),
+//         log.StderrHandler)
+//
+func MultiHandler(hs ...Handler) Handler {
+	return multiHandler(hs)
+}
+
+type failoverHandler []Handler
+
+func (fh failoverHandler) Log(r *Record) error {
+	var err error
+	for i, h := range fh {
+		err = h.Log(r)
+		if err == nil {
+			return nil
+		} else {
+			r.Ctx = append(r.Ctx, fmt.Sprintf("failover_err_%d", i), err)
+		}
+	}
+
+	return err
+}
+
+// A FailoverHandler writes all log records to the first handler
+// specified, but will failover and write to the second handler if
+// the first handler has failed, and so on for all handlers specified.
+// For example you might want to log to a network socket, but failover
+// to writing to a file if the network fails, and then to
+// standard out if the file write fails:
+//
+//     log.FailoverHandler(
+//         log.Must.SocketHandler("tcp", ":9090", log.JsonFormat()),
+//         log.Must.FileHandler("/var/log/app.log", log.LogfmtFormat()),
+//         log.StdoutHandler)
+//
+// All writes that do not go to the first handler will add context with keys of
+// the form "failover_err_{idx}" which explain the error encountered while
+// trying to write to the handlers before them in the list.
+func FailoverHandler(hs ...Handler) Handler {
+	return failoverHandler(hs)
+}
+
+type bufferedHandler struct {
+	handler Handler
+	recs    chan *Record
+}
+
+func (h bufferedHandler) Log(r *Record) error {
+	h.recs <- r
+	return nil
+}
+
+func (h bufferedHandler) run() {
+	for m := range h.recs {
+		_ = h.handler.Log(m)
+	}
+}
+
+// BufferedHandler writes all records to a buffered
+// channel of the given size which flushes into the wrapped
+// handler whenever it is available for writing. Since these
+// writes happen asynchronously, all writes to a BufferedHandler
+// never return an error and any errors from the wrapped handler are ignored.
+func BufferedHandler(bufSize int, h Handler) Handler {
+	return &bufferedHandler{
+		handler: h,
+		recs:    make(chan *Record, bufSize),
+	}
+}
+
+// swapHandler wraps another handler that may swapped out
+// dynamically at runtime in a thread-safe fashion.
+type swapHandler struct {
+	mu      sync.RWMutex
+	handler Handler
+}
+
+func (h *swapHandler) Log(r *Record) error {
+	h.mu.RLock()
+	err := h.handler.Log(r)
+	h.mu.RUnlock()
+	return err
+}
+
+func (h *swapHandler) Swap(newHandler Handler) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.handler = newHandler
+}
+
+type lazyHandler struct {
+	handler Handler
+}
+
+func (h lazyHandler) Log(r *Record) error {
+	// go through the values (odd indices) and reassign
+	// the values of any lazy fn to the result of its execution
+	hadErr := false
+	for i := 1; i < len(r.Ctx); i += 2 {
+		lz, ok := r.Ctx[i].(lazy)
+		if ok {
+			v, err := evaluateLazy(lz)
+			if err != nil {
+				hadErr = true
+				r.Ctx[i] = err
+			} else {
+				r.Ctx[i] = v
+			}
+		}
+	}
+
+	if hadErr {
+		r.Ctx = append(r.Ctx, errorKey, "bad lazy")
+	}
+
+	return h.handler.Log(r)
+}
+
+func evaluateLazy(lz lazy) (interface{}, error) {
+	t := reflect.TypeOf(lz.fn)
+
+	if t.Kind() != reflect.Func {
+		return nil, fmt.Errorf("INVALID_LAZY, not func: %+v", lz.fn)
+	}
+
+	if t.NumIn() > 0 {
+		return nil, fmt.Errorf("INVALID_LAZY, func takes args: %+v", lz.fn)
+	}
+
+	if t.NumOut() == 0 {
+		return nil, fmt.Errorf("INVALID_LAZY, no func return val: %+v", lz.fn)
+	}
+
+	value := reflect.ValueOf(lz.fn)
+	results := value.Call([]reflect.Value{})
+	if len(results) == 1 {
+		return results[0].Interface(), nil
+	} else {
+		values := make([]interface{}, len(results))
+		for i, v := range results {
+			values[i] = v.Interface()
+		}
+		return values, nil
+	}
+}
+
+// LazyHandler writes all values to the wrapped handler after evaluating
+// any lazy functions in the record's context. It is already wrapped
+// around all low-level handlers in this library, you'll only need
+// it if you write your own Handler.
+func LazyHandler(h Handler) Handler {
+	return &lazyHandler{handler: h}
+}
+
+// DiscardHandler reports success for all writes but does nothing.
+// It is useful for dynamically disabling logging at runtime via
+// a Logger's SetHandler method.
+func DiscardHandler() Handler {
+	return devnull{}
+}
+
+type devnull struct{}
+
+func (h devnull) Log(r *Record) error {
+	return nil
+}
+
+var Must muster
+
+func must(h Handler, err error) Handler {
+	if err != nil {
+		panic(err)
+	}
+	return h
+}
+
+type muster struct{}
+
+func (m muster) FileHandler(path string, fmtr Format) Handler {
+	return must(FileHandler(path, fmtr))
+}
+
+func (m muster) NetHandler(network, addr string, fmtr Format) Handler {
+	return must(NetHandler(network, addr, fmtr))
+}
