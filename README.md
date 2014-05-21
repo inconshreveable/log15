@@ -42,5 +42,13 @@ The package documentation is extensive and complete. Browse on godoc:
             log.LvlError,
             log.Must.FileHandler("errors.json", log.JsonHandler())))
 
+## FAQ
+
+### The varargs style is brittle and error prone! Can I have type saftey please?
+Yes. Use log.Ctx:
+
+    srvlog := log.New(log.Ctx{"module": "app/server"})
+    srvlog.Warn("abnormal conn rate", log.Ctx{"rate": curRate, "low": lowRate, "high": highRate})
+
 ## License
 Apache
