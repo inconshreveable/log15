@@ -149,6 +149,8 @@ func (h *waitHandler) Log(r *Record) error {
 }
 
 func TestBufferedHandler(t *testing.T) {
+	t.Parallel()
+
 	ch := make(chan Record)
 	l := New()
 	l.SetHandler(BufferedHandler(0, &waitHandler{ch}))
@@ -160,6 +162,8 @@ func TestBufferedHandler(t *testing.T) {
 }
 
 func TestLogContext(t *testing.T) {
+	t.Parallel()
+
 	l, r := testLogger()
 	l = l.New("foo", "bar")
 	l.Crit("baz")
@@ -174,5 +178,28 @@ func TestLogContext(t *testing.T) {
 
 	if r.Ctx[1] != "bar" {
 		t.Fatalf("Wrong context value, got %s expected %s", r.Ctx[1], "bar")
+	}
+}
+
+func TestLvlFilterHandler(t *testing.T) {
+	t.Parallel()
+
+	l := New()
+	h := &testHandler{}
+	l.SetHandler(LvlFilterHandler(LvlWarn, h))
+	l.Info("info'd")
+
+	if h.r.Msg != "" {
+		t.Fatalf("Expected zero record, but got record with msg: %v", h.r.Msg)
+	}
+
+	l.Warn("warned")
+	if h.r.Msg != "warned" {
+		t.Fatalf("Got record msg %s expected %s", h.r.Msg, "warned")
+	}
+
+	l.Warn("error'd")
+	if h.r.Msg != "error'd" {
+		t.Fatalf("Got record msg %s expected %s", h.r.Msg, "error'd")
 	}
 }

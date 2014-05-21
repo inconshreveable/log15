@@ -40,11 +40,11 @@ you to favor terseness, ordering, and speed over safety. This is a reasonable tr
 logging functions. You don't need to explicitly state keys/values, log15 understands that they alternate
 in the variadic argument list:
 
-    log.Warn("Pressure outside expected bounds", "low", lowBound, "high", highBound, "val", val)
+    log.Warn("size out of bounds", "low", lowBound, "high", highBound, "val", val)
 
 If you really do favor your type-safety, you may choose to pass a log.Ctx instead:
 
-    log.Warn("Pressure outside expected bounds", log.Ctx{"low": lowBound, "high": highBound, "val": val})
+    log.Warn("size out of bounds", log.Ctx{"low": lowBound, "high": highBound, "val": val})
 
 
 Context loggers
@@ -56,7 +56,7 @@ with each log line:
     requestlogger := log.New("path", r.URL.Path)
 
     // later
-    requestlogger.Debug("msg", "db txn commit", "duration", txnTimer.Finish())
+    requestlogger.Debug("db txn commit", "duration", txnTimer.Finish())
 
 This will output a log line that includes the path context that is attached to the logger:
 
@@ -214,7 +214,7 @@ Users of your library may then enable it if they like:
 Best practices attaching logger context
 
 The ability to attach context to a logger is a powerful one. Where should you do it and why?
-I favor embedding a Logger directly into any persistent object in my application and adding 
+I favor embedding a Logger directly into any persistent object in my application and adding
 unique, tracing context keys to it. For instance, imagine I am writing a web browser:
 
     type Tab struct {
@@ -250,7 +250,7 @@ Instead, think about what values to attach to your loggers the
 same way you think about what to use as a key in a SQL database schema.
 If it's possible to use a natural key that is unique for the lifetime of the
 object, do so. But otherwise, log15's ext package has a handy RandId
-function to let you generate when you might call "surrogate keys"
+function to let you generate what you might call "surrogate keys"
 They're just random hex identifiers to use for tracing. Back to our
 Tab example, we would prefer to set up our Logger like so:
 
@@ -263,7 +263,7 @@ Tab example, we would prefer to set up our Logger like so:
 
         t.Logger = log.New("id", logext.RandId(8), "url", log.Lazy(t.getUrl))
         return t
-    
+
 Now we'll have a unique traceable identifier even across loading new urls, but
 we'll still be able to see the tab's current url in the log messages.
 
