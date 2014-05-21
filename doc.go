@@ -142,14 +142,14 @@ a game where you have Player objects:
     type Player struct {
         name string
         alive bool
-        log.logger
+        log.Logger
     }
 
 You always want to log a player's name and whether they're alive or dead, so when you create the player
 object, you might do:
 
     p := &Player{name: name, alive: true}
-    p.logger = log.New("name", p.name, "alive", p.alive)
+    p.Logger = log.New("name", p.name, "alive", p.alive)
 
 Only now, even after a player has died, the logger will still report they are alive because the logging
 context is evaluated when the logger was created. By using the Lazy wrapper, we can defer the evaluation
@@ -158,7 +158,7 @@ current state no matter when the log message is written:
 
     p := &Player{name: name, alive: true}
     isAlive := func() bool { return p.alive }
-    player.logger = log.New("name", p.name, "alive", log.Lazy(isAlive))
+    player.Logger = log.New("name", p.name, "alive", log.Lazy(isAlive))
 
 Terminal Format
 
