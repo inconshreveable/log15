@@ -17,17 +17,20 @@ type Handler interface {
 	Log(r *Record) error
 }
 
-type streamHandler struct {
-	wr   io.Writer
-	fmtr Format
-}
-
 // StreamHandler writes log records to an io.Writer
 // with the given format. StreamHandler can be used
 // to easily begin writing log records to other
 // outputs.
+//
+// StreamHandler wraps itself with LazyHandler and SyncHandler
+// to evaluate Lazy objects and perform safe concurrent writes.
 func StreamHandler(wr io.Writer, fmtr Format) Handler {
-	return lazyHandler{&streamHandler{wr, fmtr}}
+	return LazyHandler(SyncHandler(&streamHandler{wr, fmtr}))
+}
+
+type streamHandler struct {
+	wr   io.Writer
+	fmtr Format
 }
 
 func (h *streamHandler) Log(r *Record) error {
@@ -35,15 +38,22 @@ func (h *streamHandler) Log(r *Record) error {
 	return err
 }
 
-type safeHandler struct {
-	Handler
+// SyncHandler can be wrapped around a handler to guarantee that
+// only a single Log operation can proceed at a time. It's necessary
+// for thread-safe concurrent writes.
+func SyncHandler(h Handler) Handler {
+    return &syncHandler{handler: h}
+}
+
+type syncHandler struct {
+	handler Handler
 	mu sync.Mutex
 }
 
-func (h *safeHandler) Log(r *Record) error {
+func (h *syncHandler) Log(r *Record) error {
+    defer h.mu.Unlock()
 	h.mu.Lock()
-	err := h.Handler.Log(r)
-	h.mu.Unlock()
+	err := h.handler.Log(r)
 	return err
 }
 
@@ -70,6 +80,9 @@ func NetHandler(network, addr string, fmtr Format) (Handler, error) {
 	return closingHandler{conn, &streamHandler{conn, fmtr}}, nil
 }
 
+// XXX: closingHandler is essentially unused at the moment
+// it's meant for a future time when the Handler interface supports
+// a possible Close() operation
 type closingHandler struct {
 	io.WriteCloser
 	Handler
@@ -77,18 +90,6 @@ type closingHandler struct {
 
 func (h *closingHandler) Close() error {
 	return h.WriteCloser.Close()
-}
-
-type filterHandler struct {
-	Handler
-	fn func(r *Record) (skip bool)
-}
-
-func (h *filterHandler) Log(r *Record) error {
-	if !h.fn(r) {
-		return h.Handler.Log(r)
-	}
-	return nil
 }
 
 // FilterHandler returns a Handler that only writes records
@@ -121,6 +122,18 @@ func FilterHandler(key string, value interface{}, h Handler) Handler {
 	}
 }
 
+type filterHandler struct {
+	Handler
+	fn func(r *Record) (skip bool)
+}
+
+func (h *filterHandler) Log(r *Record) error {
+	if !h.fn(r) {
+		return h.Handler.Log(r)
+	}
+	return nil
+}
+
 // LvlFilter returns a Handler that only writes
 // records which are less than the given verbosity
 // level to the wrapped Handler. For example, to only
@@ -137,16 +150,6 @@ func LvlFilterHandler(maxLvl Lvl, h Handler) Handler {
 	}
 }
 
-type multiHandler []Handler
-
-func (mh multiHandler) Log(r *Record) error {
-	for _, h := range mh {
-		// what to do about failures?
-		h.Log(r)
-	}
-	return nil
-}
-
 // A MultiHandler dispatches any write to each of its handlers.
 // This is useful for writing different types of log information
 // to different locations. For example, to log to a file and
@@ -160,20 +163,14 @@ func MultiHandler(hs ...Handler) Handler {
 	return multiHandler(hs)
 }
 
-type failoverHandler []Handler
+type multiHandler []Handler
 
-func (fh failoverHandler) Log(r *Record) error {
-	var err error
-	for i, h := range fh {
-		err = h.Log(r)
-		if err == nil {
-			return nil
-		} else {
-			r.Ctx = append(r.Ctx, fmt.Sprintf("failover_err_%d", i), err)
-		}
+func (mh multiHandler) Log(r *Record) error {
+	for _, h := range mh {
+		// what to do about failures?
+		h.Log(r)
 	}
-
-	return err
+	return nil
 }
 
 // A FailoverHandler writes all log records to the first handler
@@ -195,20 +192,34 @@ func FailoverHandler(hs ...Handler) Handler {
 	return failoverHandler(hs)
 }
 
-type bufferedHandler struct {
-	handler Handler
-	recs    chan *Record
-}
+type failoverHandler []Handler
 
-func (h bufferedHandler) Log(r *Record) error {
-	h.recs <- r
-	return nil
-}
-
-func (h bufferedHandler) run() {
-	for m := range h.recs {
-		_ = h.handler.Log(m)
+func (fh failoverHandler) Log(r *Record) error {
+	var err error
+	for i, h := range fh {
+		err = h.Log(r)
+		if err == nil {
+			return nil
+		} else {
+			r.Ctx = append(r.Ctx, fmt.Sprintf("failover_err_%d", i), err)
+		}
 	}
+
+	return err
+}
+
+// ChannelHandler writes all records to the given channel.
+// It blocks if the channel is full. Useful for async processing
+// of log messages, it's used by BufferedHandler.
+func ChannelHandler(recs chan<- *Record) Handler {
+	return channelHandler(recs)
+}
+
+type channelHandler chan<- *Record
+
+func (h channelHandler) Log(r *Record) error {
+	h <- r
+	return nil
 }
 
 // BufferedHandler writes all records to a buffered
@@ -217,12 +228,14 @@ func (h bufferedHandler) run() {
 // writes happen asynchronously, all writes to a BufferedHandler
 // never return an error and any errors from the wrapped handler are ignored.
 func BufferedHandler(bufSize int, h Handler) Handler {
-	handler := &bufferedHandler{
-		handler: h,
-		recs:    make(chan *Record, bufSize),
-	}
-	go handler.run()
-	return handler
+	recs := make(chan *Record, bufSize)
+	go func() {
+		for m := range recs {
+			_ = h.Log(m)
+		}
+	}()
+
+	return ChannelHandler(recs)
 }
 
 // swapHandler wraps another handler that may swapped out
@@ -233,9 +246,9 @@ type swapHandler struct {
 }
 
 func (h *swapHandler) Log(r *Record) error {
+	defer h.mu.RUnlock()
 	h.mu.RLock()
 	err := h.handler.Log(r)
-	h.mu.RUnlock()
 	return err
 }
 
@@ -243,6 +256,14 @@ func (h *swapHandler) Swap(newHandler Handler) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.handler = newHandler
+}
+
+// LazyHandler writes all values to the wrapped handler after evaluating
+// any lazy functions in the record's context. It is already wrapped
+// around StreamHandler and SyslogHandler in this library, you'll only need
+// it if you write your own Handler.
+func LazyHandler(h Handler) Handler {
+	return &lazyHandler{handler: h}
 }
 
 type lazyHandler struct {
@@ -301,14 +322,6 @@ func evaluateLazy(lz lazy) (interface{}, error) {
 	}
 }
 
-// LazyHandler writes all values to the wrapped handler after evaluating
-// any lazy functions in the record's context. It is already wrapped
-// around all low-level handlers in this library, you'll only need
-// it if you write your own Handler.
-func LazyHandler(h Handler) Handler {
-	return &lazyHandler{handler: h}
-}
-
 // DiscardHandler reports success for all writes but does nothing.
 // It is useful for dynamically disabling logging at runtime via
 // a Logger's SetHandler method.
@@ -322,6 +335,9 @@ func (h devnull) Log(r *Record) error {
 	return nil
 }
 
+// The Must object provides the following Handler creation functions
+// which instead of returning an error parameter only return a Handler
+// and panic on failure: FileHandler, NetHandler, SyslogHandler, SyslogNetHandler
 var Must muster
 
 func must(h Handler, err error) Handler {
