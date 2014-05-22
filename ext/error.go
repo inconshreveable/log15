@@ -1,6 +1,6 @@
 package ext
 
-import log "github.com/inconshreveable/log15"
+import log "gopkg.in/inconshreveable/log15.v1"
 
 // ErrorHandler wraps another handler and passes all records through
 // unchanged except if the logged context contains a non-nil error
