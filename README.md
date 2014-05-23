@@ -6,7 +6,7 @@ Package log15 provides an opinionated, simple toolkit for best-practice logging 
 
 ## Features
 - A simple, easy-to-understand API
-- Promotoes structured logging by encouraging use of key/value pairs
+- Promotes structured logging by encouraging use of key/value pairs
 - Child loggers which inherit and add their own private context
 - Lazy evaluation of expensive operations
 - Simple Handler interface allowing for construction of flexible, custom logging configurations with a tiny API.
