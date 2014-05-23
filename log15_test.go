@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net"
 	"testing"
 	"time"
-    "errors"
 )
 
 type testHandler struct {
@@ -252,69 +252,69 @@ func TestNetHandler(t *testing.T) {
 }
 
 func TestFilterHandler(t *testing.T) {
-    t.Parallel()
+	t.Parallel()
 
-    l := New()
-    h := &testHandler{}
-    l.SetHandler(FilterHandler("err", nil, h))
+	l := New()
+	h := &testHandler{}
+	l.SetHandler(FilterHandler("err", nil, h))
 
-    l.Crit("test", "foo", "bar")
-    if h.r.Msg != "" {
-        t.Fatalf("expected filter handler to discard msg")
-    }
+	l.Crit("test", "foo", "bar")
+	if h.r.Msg != "" {
+		t.Fatalf("expected filter handler to discard msg")
+	}
 
-    l.Crit("test2", "err", "bad fd")
-    if h.r.Msg != "" {
-        t.Fatalf("expected filter handler to discard msg")
-    }
+	l.Crit("test2", "err", "bad fd")
+	if h.r.Msg != "" {
+		t.Fatalf("expected filter handler to discard msg")
+	}
 
-    l.Crit("test3", "err", nil)
-    if h.r.Msg != "test3" {
-        t.Fatalf("expected filter handler to allow msg")
-    }
+	l.Crit("test3", "err", nil)
+	if h.r.Msg != "test3" {
+		t.Fatalf("expected filter handler to allow msg")
+	}
 }
 
 type failingWriter struct {
-    fail bool
+	fail bool
 }
+
 func (w *failingWriter) Write(buf []byte) (int, error) {
-    if w.fail {
-        return 0, errors.New("fail")
-    } else {
-        return len(buf), nil
-    }
+	if w.fail {
+		return 0, errors.New("fail")
+	} else {
+		return len(buf), nil
+	}
 }
 
 func TestFailoverHandler(t *testing.T) {
-    t.Parallel()
+	t.Parallel()
 
-    l := New()
-    h := &testHandler{}
-    w := &failingWriter{false}
+	l := New()
+	h := &testHandler{}
+	w := &failingWriter{false}
 
-    l.SetHandler(FailoverHandler(
-        StreamHandler(w, JsonFormat()),
-        h))
+	l.SetHandler(FailoverHandler(
+		StreamHandler(w, JsonFormat()),
+		h))
 
-    l.Debug("test ok")
-    if h.r.Msg != "" {
-        t.Fatalf("expected no failover")
-    }
+	l.Debug("test ok")
+	if h.r.Msg != "" {
+		t.Fatalf("expected no failover")
+	}
 
-    w.fail = true
-    l.Debug("test failover", "x", 1)
-    if h.r.Msg != "test failover" {
-        t.Fatalf("expected failover")
-    }
+	w.fail = true
+	l.Debug("test failover", "x", 1)
+	if h.r.Msg != "test failover" {
+		t.Fatalf("expected failover")
+	}
 
-    if len(h.r.Ctx) != 4 {
-        t.Fatalf("expected additional failover ctx")
-    }
+	if len(h.r.Ctx) != 4 {
+		t.Fatalf("expected additional failover ctx")
+	}
 
-    got := h.r.Ctx[2]
-    expected := "failover_err_0"
-    if got != expected {
-        t.Fatalf("expected failover ctx. got: %s, expected %s", got, expected)
-    }
+	got := h.r.Ctx[2]
+	expected := "failover_err_0"
+	if got != expected {
+		t.Fatalf("expected failover ctx. got: %s, expected %s", got, expected)
+	}
 }
-
