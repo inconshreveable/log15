@@ -42,16 +42,16 @@ func (h *streamHandler) Log(r *Record) error {
 // only a single Log operation can proceed at a time. It's necessary
 // for thread-safe concurrent writes.
 func SyncHandler(h Handler) Handler {
-    return &syncHandler{handler: h}
+	return &syncHandler{handler: h}
 }
 
 type syncHandler struct {
 	handler Handler
-	mu sync.Mutex
+	mu      sync.Mutex
 }
 
 func (h *syncHandler) Log(r *Record) error {
-    defer h.mu.Unlock()
+	defer h.mu.Unlock()
 	h.mu.Lock()
 	err := h.handler.Log(r)
 	return err
@@ -66,7 +66,7 @@ func FileHandler(path string, fmtr Format) (Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	return closingHandler{f, &streamHandler{f, fmtr}}, nil
+	return closingHandler{f, StreamHandler(f, fmtr)}, nil
 }
 
 // NetHandler opens a socket to the given address and writes records
@@ -77,7 +77,7 @@ func NetHandler(network, addr string, fmtr Format) (Handler, error) {
 		return nil, err
 	}
 
-	return closingHandler{conn, &streamHandler{conn, fmtr}}, nil
+	return closingHandler{conn, StreamHandler(conn, fmtr)}, nil
 }
 
 // XXX: closingHandler is essentially unused at the moment
@@ -156,7 +156,7 @@ func LvlFilterHandler(maxLvl Lvl, h Handler) Handler {
 // standard error:
 //
 //     log.MultiHandler(
-//         log.MustFileHandler("/var/log/app.log", log.LogfmtFormat()),
+//         log.Must.FileHandler("/var/log/app.log", log.LogfmtFormat()),
 //         log.StderrHandler)
 //
 func MultiHandler(hs ...Handler) Handler {
@@ -181,7 +181,7 @@ func (mh multiHandler) Log(r *Record) error {
 // standard out if the file write fails:
 //
 //     log.FailoverHandler(
-//         log.Must.SocketHandler("tcp", ":9090", log.JsonFormat()),
+//         log.Must.NetHandler("tcp", ":9090", log.JsonFormat()),
 //         log.Must.FileHandler("/var/log/app.log", log.LogfmtFormat()),
 //         log.StdoutHandler)
 //

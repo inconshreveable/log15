@@ -1,9 +1,13 @@
 package log15
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
+	"net"
 	"testing"
+	"time"
+    "errors"
 )
 
 type testHandler struct {
@@ -203,3 +207,114 @@ func TestLvlFilterHandler(t *testing.T) {
 		t.Fatalf("Got record msg %s expected %s", h.r.Msg, "error'd")
 	}
 }
+
+func TestNetHandler(t *testing.T) {
+	t.Parallel()
+
+	l, err := net.Listen("tcp", ":0")
+	if err != nil {
+		t.Fatalf("Failed to listen: %v", l)
+	}
+
+	errs := make(chan error)
+	go func() {
+		c, err := l.Accept()
+		if err != nil {
+			t.Errorf("Failed to accept conneciton: %v", err)
+			return
+		}
+
+		rd := bufio.NewReader(c)
+		s, err := rd.ReadString('\n')
+		if err != nil {
+			t.Errorf("Failed to read string: %v", err)
+		}
+
+		got := s[27:]
+		expected := "lvl=info msg=test x=1 \n"
+		if got != expected {
+			t.Errorf("Got log line %s, expected %s", got, expected)
+		}
+
+		errs <- nil
+	}()
+
+	lg := New()
+	lg.SetHandler(Must.NetHandler("tcp", l.Addr().String(), LogfmtFormat()))
+	lg.Info("test", "x", 1)
+
+	select {
+	case <-time.After(time.Second):
+		t.Fatalf("Test timed out!")
+	case <-errs:
+		// ok
+	}
+}
+
+func TestFilterHandler(t *testing.T) {
+    t.Parallel()
+
+    l := New()
+    h := &testHandler{}
+    l.SetHandler(FilterHandler("err", nil, h))
+
+    l.Crit("test", "foo", "bar")
+    if h.r.Msg != "" {
+        t.Fatalf("expected filter handler to discard msg")
+    }
+
+    l.Crit("test2", "err", "bad fd")
+    if h.r.Msg != "" {
+        t.Fatalf("expected filter handler to discard msg")
+    }
+
+    l.Crit("test3", "err", nil)
+    if h.r.Msg != "test3" {
+        t.Fatalf("expected filter handler to allow msg")
+    }
+}
+
+type failingWriter struct {
+    fail bool
+}
+func (w *failingWriter) Write(buf []byte) (int, error) {
+    if w.fail {
+        return 0, errors.New("fail")
+    } else {
+        return len(buf), nil
+    }
+}
+
+func TestFailoverHandler(t *testing.T) {
+    t.Parallel()
+
+    l := New()
+    h := &testHandler{}
+    w := &failingWriter{false}
+
+    l.SetHandler(FailoverHandler(
+        StreamHandler(w, JsonFormat()),
+        h))
+
+    l.Debug("test ok")
+    if h.r.Msg != "" {
+        t.Fatalf("expected no failover")
+    }
+
+    w.fail = true
+    l.Debug("test failover", "x", 1)
+    if h.r.Msg != "test failover" {
+        t.Fatalf("expected failover")
+    }
+
+    if len(h.r.Ctx) != 4 {
+        t.Fatalf("expected additional failover ctx")
+    }
+
+    got := h.r.Ctx[2]
+    expected := "failover_err_0"
+    if got != expected {
+        t.Fatalf("expected failover ctx. got: %s, expected %s", got, expected)
+    }
+}
+

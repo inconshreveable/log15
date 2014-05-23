@@ -50,7 +50,7 @@ func sharedSyslog(fmtr Format, sysWr *syslog.Writer, err error) (Handler, error)
 		return nil, err
 	}
 
-	return lazyHandler{&closingHandler{sysWr, &syslogHandler{sysWr, fmtr}}}, nil
+	return LazyHandler(&closingHandler{sysWr, &syslogHandler{sysWr, fmtr}}), nil
 }
 
 func (m muster) SyslogHandler(priority syslog.Priority, tag string, fmtr Format) Handler {
