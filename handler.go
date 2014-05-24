@@ -280,21 +280,21 @@ func LazyHandler(h Handler) Handler {
 }
 
 func evaluateLazy(lz Lazy) (interface{}, error) {
-	t := reflect.TypeOf(lz.fn)
+	t := reflect.TypeOf(lz.Fn)
 
 	if t.Kind() != reflect.Func {
-		return nil, fmt.Errorf("INVALID_LAZY, not func: %+v", lz.fn)
+		return nil, fmt.Errorf("INVALID_LAZY, not func: %+v", lz.Fn)
 	}
 
 	if t.NumIn() > 0 {
-		return nil, fmt.Errorf("INVALID_LAZY, func takes args: %+v", lz.fn)
+		return nil, fmt.Errorf("INVALID_LAZY, func takes args: %+v", lz.Fn)
 	}
 
 	if t.NumOut() == 0 {
-		return nil, fmt.Errorf("INVALID_LAZY, no func return val: %+v", lz.fn)
+		return nil, fmt.Errorf("INVALID_LAZY, no func return val: %+v", lz.Fn)
 	}
 
-	value := reflect.ValueOf(lz.fn)
+	value := reflect.ValueOf(lz.Fn)
 	results := value.Call([]reflect.Value{})
 	if len(results) == 1 {
 		return results[0].Interface(), nil

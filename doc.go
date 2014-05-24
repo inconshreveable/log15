@@ -17,7 +17,7 @@ Getting Started
 
 To get started, you'll want to import the library:
 
-    import log "gopkg.in/inconshreveable/log15.v1"
+    import log "gopkg.in/inconshreveable/log15.v2"
 
 
 Now you're ready to start logging:
@@ -87,7 +87,7 @@ or above in JSON formatted output to the file /var/log/service.json
 
     handler := log.MultiHandler(
         log.LvlFilterHandler(log.LvlError, log.Must.FileHandler("/var/log/service.json", log.JsonFormat())),
-        log.FilterHandler("pkg", "app/rpc" log.StdoutHandler())
+        log.CtxFilterHandler("pkg", "app/rpc" log.StdoutHandler())
     )
 
 Custom Handlers
@@ -122,13 +122,13 @@ the price of computing them if you haven't turned up your logging level to a hig
 
 This package provides a simple type to annotate a logging operation that you want to be evaluated
 lazily, just when it is about to be logged, so that it would not be evaluated if an upstream Handler
-filters it out. Just wrap any function which takes no arguments with the log.Lazy function. For example:
+filters it out. Just wrap any function which takes no arguments with the log.Lazy type. For example:
 
     func factorRSAKey() (factors []int) {
         // return the factors of a very large number
     }
 
-    log.Debug("factors", log.Lazy(factorRSAKey))
+    log.Debug("factors", log.Lazy{factorRSAKey})
 
 If this message is not logged for any reason (like logging at the Error level), then
 factorRSAKey is never evaluated.
@@ -158,7 +158,7 @@ current state no matter when the log message is written:
 
     p := &Player{name: name, alive: true}
     isAlive := func() bool { return p.alive }
-    player.Logger = log.New("name", p.name, "alive", log.Lazy(isAlive))
+    player.Logger = log.New("name", p.name, "alive", log.Lazy{isAlive})
 
 Terminal Format
 
@@ -193,7 +193,7 @@ by default and to provide a public Logger instance that consumers of your librar
 
     package yourlib
 
-    import "gopkg.in/inconshreveable/log15.v1"
+    import "gopkg.in/inconshreveable/log15.v2"
 
     var Log = log.New()
 
@@ -203,7 +203,7 @@ by default and to provide a public Logger instance that consumers of your librar
 
 Users of your library may then enable it if they like:
 
-    import "gopkg.in/inconshreveable/log15.v1"
+    import "gopkg.in/inconshreveable/log15.v2"
     import "example.com/yourlib"
 
     func main() {
@@ -254,14 +254,14 @@ function to let you generate what you might call "surrogate keys"
 They're just random hex identifiers to use for tracing. Back to our
 Tab example, we would prefer to set up our Logger like so:
 
-        import logext "gopkg.in/inconshreveable/log15.v1/ext"
+        import logext "gopkg.in/inconshreveable/log15.v2/ext"
 
         t := &Tab {
             // ...
             url: url,
         }
 
-        t.Logger = log.New("id", logext.RandId(8), "url", log.Lazy(t.getUrl))
+        t.Logger = log.New("id", logext.RandId(8), "url", log.Lazy{t.getUrl})
         return t
 
 Now we'll have a unique traceable identifier even across loading new urls, but

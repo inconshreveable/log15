@@ -151,7 +151,7 @@ func normalize(ctx []interface{}) []interface{} {
 // You may wrap any function which takes no arguments to Lazy. It may return any
 // number of values of any type.
 type Lazy struct {
-	fn interface{}
+	Fn interface{}
 }
 
 // Ctx is a map of key/value pairs to pass as context to a log function
