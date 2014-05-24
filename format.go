@@ -11,6 +11,7 @@ import (
 
 const (
 	timeLayout  = "2006-01-02T15:04:05-0700"
+	timeFmt     = "01-02|15:04:05"
 	floatFormat = 'f'
 )
 
@@ -54,16 +55,29 @@ func TerminalFormat() Format {
 			color = 36
 		}
 
-		var s string
+		b := &bytes.Buffer{}
 		lvl := strings.ToUpper(r.Lvl.String())
 		if color > 0 {
-			s = fmt.Sprintf("[%s] [\x1b[%dm%s\x1b[0m] %s ", r.Time.Format(time.Stamp), color, lvl, r.Msg)
+			fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s] %s ", color, lvl, r.Time.Format(timeFmt), r.Msg)
 		} else {
-			s = fmt.Sprintf("[%s] [%s] %s ", r.Time.Format(time.Stamp), lvl, r.Msg)
+			fmt.Fprintf(b, "[%s] [%s] %s ", lvl, r.Time.Format(timeFmt), r.Msg)
 		}
 
-		bytes := logfmt(r.Ctx)
-		return append([]byte(s), bytes...)
+		if len(r.Ctx) > 0 {
+			b.Write(bytes.Repeat([]byte{' '}, 44-len(r.Msg)))
+		}
+		for i := 0; i < len(r.Ctx); i += 2 {
+			b.WriteByte(' ')
+			k, ok := r.Ctx[i].(string)
+			if !ok {
+				fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m=\"%+v is not a string key\"", color, errorKey, r.Ctx[i])
+			} else {
+				// XXX: we should probably check that all of your key bytes aren't invalid`
+				fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m=%s", color, k, formatLogfmtValue(r.Ctx[i+1]))
+			}
+		}
+		fmt.Fprintln(b)
+		return b.Bytes()
 	})
 }
 
@@ -180,48 +194,16 @@ func formatLogfmtValue(value interface{}) string {
 
 	value = formatShared(value)
 	switch v := value.(type) {
-	case string:
-		return escapeString(v)
-
 	case bool:
 		return strconv.FormatBool(v)
-
-	case int:
-		return strconv.FormatInt(int64(v), 10)
-
-	case int8:
-		return strconv.FormatInt(int64(v), 10)
-
-	case int16:
-		return strconv.FormatInt(int64(v), 10)
-
-	case int32:
-		return strconv.FormatInt(int64(v), 10)
-
-	case int64:
-		return strconv.FormatInt(v, 10)
-
 	case float32:
 		return strconv.FormatFloat(float64(v), floatFormat, 3, 64)
-
 	case float64:
 		return strconv.FormatFloat(v, floatFormat, 3, 64)
-
-	case uint:
-		return strconv.FormatUint(uint64(v), 10)
-
-	case uint8:
-		return strconv.FormatUint(uint64(v), 10)
-
-	case uint16:
-		return strconv.FormatUint(uint64(v), 10)
-
-	case uint32:
-		return strconv.FormatUint(uint64(v), 10)
-
-	case uint64:
-		return strconv.FormatUint(v, 10)
-
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return fmt.Sprintf("%d", value)
+	case string:
+		return escapeString(v)
 	default:
 		return escapeString(fmt.Sprintf("%+v", value))
 	}
@@ -229,7 +211,7 @@ func formatLogfmtValue(value interface{}) string {
 
 func escapeString(s string) string {
 	needQuotes := false
-	e := new(bytes.Buffer)
+	e := bytes.Buffer{}
 	e.WriteByte('"')
 	for _, r := range s {
 		if r <= ' ' || r == '=' || r == '"' {
