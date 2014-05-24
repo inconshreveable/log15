@@ -20,12 +20,13 @@ type Handler interface {
 // FuncHandler returns a Handler that logs records with the given
 // function.
 func FuncHandler(fn func(r *Record) error) Handler {
-    return funcHandler(fn)
+	return funcHandler(fn)
 }
 
 type funcHandler func(r *Record) error
+
 func (h funcHandler) Log(r *Record) error {
-    return h(r)
+	return h(r)
 }
 
 // StreamHandler writes log records to an io.Writer
@@ -36,11 +37,11 @@ func (h funcHandler) Log(r *Record) error {
 // StreamHandler wraps itself with LazyHandler and SyncHandler
 // to evaluate Lazy objects and perform safe concurrent writes.
 func StreamHandler(wr io.Writer, fmtr Format) Handler {
-	h := FuncHandler(func (r *Record) error {
-        _, err := wr.Write(fmtr.Format(r))
-        return err
-    })
-    return LazyHandler(SyncHandler(h))
+	h := FuncHandler(func(r *Record) error {
+		_, err := wr.Write(fmtr.Format(r))
+		return err
+	})
+	return LazyHandler(SyncHandler(h))
 }
 
 // SyncHandler can be wrapped around a handler to guarantee that
@@ -48,11 +49,11 @@ func StreamHandler(wr io.Writer, fmtr Format) Handler {
 // for thread-safe concurrent writes.
 func SyncHandler(h Handler) Handler {
 	var mu sync.Mutex
-    return FuncHandler(func (r *Record) error {
-        defer mu.Unlock()
-        mu.Lock()
-        return h.Log(r)
-    })
+	return FuncHandler(func(r *Record) error {
+		defer mu.Unlock()
+		mu.Lock()
+		return h.Log(r)
+	})
 }
 
 // FileHandler returns a handler which writes log records to the give file
@@ -104,13 +105,13 @@ func (h *closingHandler) Close() error {
 //        }
 //    })
 //
-func FilterHandler(h Handler, fn func (r *Record) bool) Handler {
-    return FuncHandler(func(r *Record) error {
-        if fn(r) {
-            return h.Log(r)
-        }
-        return nil
-    })
+func FilterHandler(h Handler, fn func(r *Record) bool) Handler {
+	return FuncHandler(func(r *Record) error {
+		if fn(r) {
+			return h.Log(r)
+		}
+		return nil
+	})
 }
 
 // CtxFilterHandler returns a Handler that only writes records
@@ -121,23 +122,23 @@ func FilterHandler(h Handler, fn func (r *Record) bool) Handler {
 //    log.CtxFilterHandler("pkg", "app/ui", log.StdoutHandler)
 //
 func CtxFilterHandler(key string, value interface{}, h Handler) Handler {
-    return FilterHandler(h, func(r *Record) (pass bool) {
-        switch key {
-        case "lvl":
-            return r.Lvl == value
-        case "t":
-            return r.Time == value
-        case "msg":
-            return r.Msg == value
-        }
+	return FilterHandler(h, func(r *Record) (pass bool) {
+		switch key {
+		case "lvl":
+			return r.Lvl == value
+		case "t":
+			return r.Time == value
+		case "msg":
+			return r.Msg == value
+		}
 
-        for i := 0; i < len(r.Ctx); i += 2 {
-            if r.Ctx[i] == key {
-                return r.Ctx[i+1] == value
-            }
-        }
-        return false
-    })
+		for i := 0; i < len(r.Ctx); i += 2 {
+			if r.Ctx[i] == key {
+				return r.Ctx[i+1] == value
+			}
+		}
+		return false
+	})
 }
 
 // LvlFilterHandler returns a Handler that only writes
@@ -149,7 +150,7 @@ func CtxFilterHandler(key string, value interface{}, h Handler) Handler {
 //
 func LvlFilterHandler(maxLvl Lvl, h Handler) Handler {
 	return FilterHandler(h, func(r *Record) (pass bool) {
-        return r.Lvl <= maxLvl
+		return r.Lvl <= maxLvl
 	})
 }
 
@@ -163,13 +164,13 @@ func LvlFilterHandler(maxLvl Lvl, h Handler) Handler {
 //         log.StderrHandler)
 //
 func MultiHandler(hs ...Handler) Handler {
-    return FuncHandler(func (r *Record) error {
-        for _, h := range hs {
-            // what to do about failures?
-            h.Log(r)
-        }
-        return nil
-    })
+	return FuncHandler(func(r *Record) error {
+		for _, h := range hs {
+			// what to do about failures?
+			h.Log(r)
+		}
+		return nil
+	})
 }
 
 // A FailoverHandler writes all log records to the first handler
@@ -189,28 +190,28 @@ func MultiHandler(hs ...Handler) Handler {
 // trying to write to the handlers before them in the list.
 func FailoverHandler(hs ...Handler) Handler {
 	return FuncHandler(func(r *Record) error {
-        var err error
-        for i, h := range hs {
-            err = h.Log(r)
-            if err == nil {
-                return nil
-            } else {
-                r.Ctx = append(r.Ctx, fmt.Sprintf("failover_err_%d", i), err)
-            }
-        }
+		var err error
+		for i, h := range hs {
+			err = h.Log(r)
+			if err == nil {
+				return nil
+			} else {
+				r.Ctx = append(r.Ctx, fmt.Sprintf("failover_err_%d", i), err)
+			}
+		}
 
-        return err
-    })
+		return err
+	})
 }
 
 // ChannelHandler writes all records to the given channel.
 // It blocks if the channel is full. Useful for async processing
 // of log messages, it's used by BufferedHandler.
 func ChannelHandler(recs chan<- *Record) Handler {
-    return FuncHandler(func (r *Record) error {
-        recs <- r
-        return nil
-    })
+	return FuncHandler(func(r *Record) error {
+		recs <- r
+		return nil
+	})
 }
 
 // BufferedHandler writes all records to a buffered
@@ -254,31 +255,31 @@ func (h *swapHandler) Swap(newHandler Handler) {
 // it if you write your own Handler.
 func LazyHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
-        // go through the values (odd indices) and reassign
-        // the values of any lazy fn to the result of its execution
-        hadErr := false
-        for i := 1; i < len(r.Ctx); i += 2 {
-            lz, ok := r.Ctx[i].(lazy)
-            if ok {
-                v, err := evaluateLazy(lz)
-                if err != nil {
-                    hadErr = true
-                    r.Ctx[i] = err
-                } else {
-                    r.Ctx[i] = v
-                }
-            }
-        }
+		// go through the values (odd indices) and reassign
+		// the values of any lazy fn to the result of its execution
+		hadErr := false
+		for i := 1; i < len(r.Ctx); i += 2 {
+			lz, ok := r.Ctx[i].(Lazy)
+			if ok {
+				v, err := evaluateLazy(lz)
+				if err != nil {
+					hadErr = true
+					r.Ctx[i] = err
+				} else {
+					r.Ctx[i] = v
+				}
+			}
+		}
 
-        if hadErr {
-            r.Ctx = append(r.Ctx, errorKey, "bad lazy")
-        }
+		if hadErr {
+			r.Ctx = append(r.Ctx, errorKey, "bad lazy")
+		}
 
-        return h.Log(r)
-    })
+		return h.Log(r)
+	})
 }
 
-func evaluateLazy(lz lazy) (interface{}, error) {
+func evaluateLazy(lz Lazy) (interface{}, error) {
 	t := reflect.TypeOf(lz.fn)
 
 	if t.Kind() != reflect.Func {
@@ -310,9 +311,9 @@ func evaluateLazy(lz lazy) (interface{}, error) {
 // It is useful for dynamically disabling logging at runtime via
 // a Logger's SetHandler method.
 func DiscardHandler() Handler {
-    return FuncHandler(func (r *Record) error {
-        return nil
-    })
+	return FuncHandler(func(r *Record) error {
+		return nil
+	})
 }
 
 // The Must object provides the following Handler creation functions

@@ -7,30 +7,6 @@ import (
 	"strings"
 )
 
-type syslogHandler struct {
-	sysWr *syslog.Writer
-	fmtr  Format
-}
-
-func (h *syslogHandler) Log(r *Record) error {
-	var syslogFn = h.sysWr.Info
-	switch r.Lvl {
-	case LvlCrit:
-		syslogFn = h.sysWr.Crit
-	case LvlError:
-		syslogFn = h.sysWr.Err
-	case LvlWarn:
-		syslogFn = h.sysWr.Warning
-	case LvlInfo:
-		syslogFn = h.sysWr.Info
-	case LvlDebug:
-		syslogFn = h.sysWr.Debug
-	}
-
-	s := strings.TrimSpace(string(h.fmtr.Format(r)))
-	return syslogFn(s)
-}
-
 // SyslogHandler opens a connection to the system syslog daemon by calling
 // syslog.New and writes all records to it.
 func SyslogHandler(priority syslog.Priority, tag string, fmtr Format) (Handler, error) {
@@ -49,8 +25,25 @@ func sharedSyslog(fmtr Format, sysWr *syslog.Writer, err error) (Handler, error)
 	if err != nil {
 		return nil, err
 	}
+	h := FuncHandler(func(r *Record) error {
+		var syslogFn = sysWr.Info
+		switch r.Lvl {
+		case LvlCrit:
+			syslogFn = sysWr.Crit
+		case LvlError:
+			syslogFn = sysWr.Err
+		case LvlWarn:
+			syslogFn = sysWr.Warning
+		case LvlInfo:
+			syslogFn = sysWr.Info
+		case LvlDebug:
+			syslogFn = sysWr.Debug
+		}
 
-	return LazyHandler(&closingHandler{sysWr, &syslogHandler{sysWr, fmtr}}), nil
+		s := strings.TrimSpace(string(fmtr.Format(r)))
+		return syslogFn(s)
+	})
+	return LazyHandler(&closingHandler{sysWr, h}), nil
 }
 
 func (m muster) SyslogHandler(priority syslog.Priority, tag string, fmtr Format) Handler {

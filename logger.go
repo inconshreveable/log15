@@ -150,11 +150,7 @@ func normalize(ctx []interface{}) []interface{} {
 //
 // You may wrap any function which takes no arguments to Lazy. It may return any
 // number of values of any type.
-func Lazy(fn interface{}) lazy {
-	return lazy{fn}
-}
-
-type lazy struct {
+type Lazy struct {
 	fn interface{}
 }
 

@@ -35,13 +35,13 @@ func TestLazy(t *testing.T) {
 	}
 
 	l, r := testLogger()
-	l.Info("", "x", Lazy(lazy))
+	l.Info("", "x", Lazy{lazy})
 	if r.Ctx[1] != 1 {
 		t.Fatalf("Lazy function not evaluated, got %v, expected %d", r.Ctx[1], 1)
 	}
 
 	x = 2
-	l.Info("", "x", Lazy(lazy))
+	l.Info("", "x", Lazy{lazy})
 	if r.Ctx[1] != 2 {
 		t.Fatalf("Lazy function not evaluated, got %v, expected %d", r.Ctx[1], 1)
 	}
@@ -61,13 +61,13 @@ func TestInvalidLazy(t *testing.T) {
 		}
 	}
 
-	l.Info("", "x", Lazy(1))
+	l.Info("", "x", Lazy{1})
 	validate()
 
-	l.Info("", "x", Lazy(func(x int) int { return x }))
+	l.Info("", "x", Lazy{func(x int) int { return x }})
 	validate()
 
-	l.Info("", "x", Lazy(func() {}))
+	l.Info("", "x", Lazy{func() {}})
 	validate()
 }
 
