@@ -12,7 +12,7 @@ func init() {
 	r = rand.New(rand.NewSource(time.Now().Unix()))
 }
 
-// RandId creates a random identifier of the requested length
+// RandId creates a random identifier of the requested length.
 // Useful for assigning mostly-unique identifiers for logging
 // and identification that are unlikely to collide because of
 // short lifespan or low set cardinality
