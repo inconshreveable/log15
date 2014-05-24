@@ -22,7 +22,7 @@ func (h *testHandler) Log(r *Record) error {
 func testLogger() (Logger, *Record) {
 	l := New()
 	h := &testHandler{}
-	l.SetHandler(&lazyHandler{h})
+	l.SetHandler(LazyHandler(h))
 	return l, &h.r
 }
 
@@ -251,12 +251,12 @@ func TestNetHandler(t *testing.T) {
 	}
 }
 
-func TestFilterHandler(t *testing.T) {
+func TestCtxFilterHandler(t *testing.T) {
 	t.Parallel()
 
 	l := New()
 	h := &testHandler{}
-	l.SetHandler(FilterHandler("err", nil, h))
+	l.SetHandler(CtxFilterHandler("err", nil, h))
 
 	l.Crit("test", "foo", "bar")
 	if h.r.Msg != "" {
