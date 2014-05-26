@@ -97,13 +97,14 @@ func (h *closingHandler) Close() error {
 // expressed with simple equality with CtxFilterHandler. For example,
 // to only log records where the 'err' key is not nil:
 //
-//    FilterHandler(h, func(r *Record) bool) {
+//    logger.SetHandler(FilterHandler(h, func(r *Record) bool) {
 //        for i := 0; i < len(r.Ctx); i += 2 {
 //            if r.Ctx[i] == "err" {
 //                return r.Ctx[i+1] != nil
 //            }
 //        }
-//    })
+//        return false
+//    }))
 //
 func FilterHandler(h Handler, fn func(r *Record) bool) Handler {
 	return FuncHandler(func(r *Record) error {
