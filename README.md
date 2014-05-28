@@ -24,7 +24,7 @@ The package documentation is extensive and complete. Browse on godoc:
 The API of the master branch of log15 should always be considered unstable. Using a stable version
 of the log15 package is supported by gopkg.in. Include your dependency like so:
 
-    import log "gopkg.in/inconshreveable/log15.v1"
+    import log "gopkg.in/inconshreveable/log15.v2"
 
 You can also vendor log15 with a tool like Godep.
 

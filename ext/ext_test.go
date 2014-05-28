@@ -1,8 +1,8 @@
 package ext
 
 import (
-    log "gopkg.in/inconshreveable/log15.v1"
-    "testing"
+	log "gitub.com/inconshreveable/log15"
+	"testing"
 )
 
 type testHandler struct {
