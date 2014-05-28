@@ -251,12 +251,12 @@ func TestNetHandler(t *testing.T) {
 	}
 }
 
-func TestCtxFilterHandler(t *testing.T) {
+func TestMatchFilterHandler(t *testing.T) {
 	t.Parallel()
 
 	l := New()
 	h := &testHandler{}
-	l.SetHandler(CtxFilterHandler("err", nil, h))
+	l.SetHandler(MatchFilterHandler("err", nil, h))
 
 	l.Crit("test", "foo", "bar")
 	if h.r.Msg != "" {

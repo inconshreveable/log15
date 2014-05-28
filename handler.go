@@ -92,9 +92,7 @@ func (h *closingHandler) Close() error {
 }
 
 // FilterHandler returns a Handler that only writes records to the
-// wrapped Handler if the given function evaluates true. This is
-// useful for more complicated filter conditions that can't be
-// expressed with simple equality with CtxFilterHandler. For example,
+// wrapped Handler if the given function evaluates true. For example,
 // to only log records where the 'err' key is not nil:
 //
 //    logger.SetHandler(FilterHandler(h, func(r *Record) bool) {
@@ -115,14 +113,14 @@ func FilterHandler(h Handler, fn func(r *Record) bool) Handler {
 	})
 }
 
-// CtxFilterHandler returns a Handler that only writes records
+// MatchFilterHandler returns a Handler that only writes records
 // to the wrapped Handler if the given key in the logged
 // context matches the value. For example, to only log records
 // from your ui package:
 //
-//    log.CtxFilterHandler("pkg", "app/ui", log.StdoutHandler)
+//    log.MatchFilterHandler("pkg", "app/ui", log.StdoutHandler)
 //
-func CtxFilterHandler(key string, value interface{}, h Handler) Handler {
+func MatchFilterHandler(key string, value interface{}, h Handler) Handler {
 	return FilterHandler(h, func(r *Record) (pass bool) {
 		switch key {
 		case "lvl":

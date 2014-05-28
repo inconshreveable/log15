@@ -87,7 +87,7 @@ or above in JSON formatted output to the file /var/log/service.json
 
     handler := log.MultiHandler(
         log.LvlFilterHandler(log.LvlError, log.Must.FileHandler("/var/log/service.json", log.JsonFormat())),
-        log.CtxFilterHandler("pkg", "app/rpc" log.StdoutHandler())
+        log.MatchFilterHandler("pkg", "app/rpc" log.StdoutHandler())
     )
 
 Custom Handlers
