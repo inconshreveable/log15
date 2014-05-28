@@ -5,14 +5,18 @@ import (
 	"sync"
 )
 
-// ErrorHandler wraps another handler and passes all records through
+// EscalateErrHandler wraps another handler and passes all records through
 // unchanged except if the logged context contains a non-nil error
-// value in its context. Then ErrorHandler will *increase* the log
-// level to LvlError, unless it was already at LvlCrit.
+// value in its context. In that case, the record's level is raised
+// to LvlError unless it was already more serious (LvlCrit).
 //
 // This allows you to log the result of all functions for debugging
-// and capture error conditions when in production with a single
-// log line. Example:
+// and still capture error conditions when in production with a single
+// log line. As an example, the following the log record will be written
+// out only if there was an error writing a value to redis:
+//
+//     logger := logext.EscalateErrHandler(
+//         log.LvlFilterHandler(log.LvlInfo, log.StdoutHandler))
 //
 //     reply, err := redisConn.Do("SET", "foo", "bar")
 //     logger.Debug("Wrote value to redis", "reply", reply, "err", err)
@@ -20,20 +24,14 @@ import (
 //         return err
 //     }
 //
-func ErrorHandler(h log.Handler) log.Handler {
-	return errorHandler{h}
-}
-
-type errorHandler struct {
-	h log.Handler
-}
-
-func (h errorHandler) Log(r *log.Record) error {
-	if r.Lvl < log.LvlError {
-		for i := 1; i < len(r.Ctx); i++ {
-			if v, ok := r.Ctx[i].(error); ok && v != nil {
-				r.Lvl = log.LvlError
-				break
+func EscalateErrHandler(h log.Handler) log.Handler {
+	return log.FuncHandler(func(r *log.Record) error {
+		if r.Lvl > log.LvlError {
+			for i := 1; i < len(r.Ctx); i++ {
+				if v, ok := r.Ctx[i].(error); ok && v != nil {
+					r.Lvl = log.LvlError
+					break
+				}
 			}
 		}
 	}
@@ -46,7 +44,7 @@ func (h errorHandler) Log(r *log.Record) error {
 // logged into it. When Flush is called, all buffered log records
 // are written to the wrapped handler. This is extremely for
 // continuosly capturing debug level output, but only flushing those
-// log records if an exception condition is encountered.
+// log records if an exceptional condition is encountered.
 func SpeculativeHandler(size int, h log.Handler) *Speculative {
 	return &Speculative{
 		handler: h,

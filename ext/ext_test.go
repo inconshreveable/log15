@@ -1,37 +1,38 @@
 package ext
 
 import (
+	"errors"
 	log "github.com/inconshreveable/log15"
 	"math"
 	"testing"
 )
 
-type testHandler struct {
-    r log.Record
-}
-func (h *testHandler) Log(r *log.Record) error {
-    h.r = *r
-    return nil
+func testHandler() (log.Handler, *log.Record) {
+	rec := new(log.Record)
+	return log.FuncHandler(func(r *log.Record) error {
+		*rec = *r
+		return nil
+	}), rec
 }
 
 func TestHotSwapHandler(t *testing.T) {
 	t.Parallel()
 
-	h1 := &testHandler{}
+	h1, r1 := testHandler()
 
 	l := log.New()
 	h := HotSwapHandler(h1)
 	l.SetHandler(h)
 
 	l.Info("to h1")
-	if h1.r.Msg != "to h1" {
+	if r1.Msg != "to h1" {
 		t.Fatalf("didn't get expected message to h1")
 	}
 
-	h2 := &testHandler{}
+	h2, r2 := testHandler()
 	h.Swap(h2)
 	l.Info("to h2")
-	if h2.r.Msg != "to h2" {
+	if r2.Msg != "to h2" {
 		t.Fatalf("didn't get expected message to h2")
 	}
 }
@@ -81,5 +82,28 @@ func TestSpeculativeHandler(t *testing.T) {
 
 		// wait for the go routine to finish
 		<-done
+	}
+}
+
+func TestErrorHandler(t *testing.T) {
+	t.Parallel()
+
+	h, r := testHandler()
+	lg := log.New()
+	lg.SetHandler(EscalateErrHandler(
+		log.LvlFilterHandler(log.LvlError, h)))
+
+	lg.Debug("some function result", "err", nil)
+	if r.Msg != "" {
+		t.Fatalf("Expected debug level message to be filtered")
+	}
+
+	lg.Debug("some function result", "err", errors.New("failed operation"))
+	if r.Msg != "some function result" {
+		t.Fatalf("Expected debug level message to be escalated and pass lvlfilter")
+	}
+
+	if r.Lvl != log.LvlError {
+		t.Fatalf("Expected debug level message to be escalated to LvlError")
 	}
 }

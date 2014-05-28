@@ -95,16 +95,16 @@ func (h *closingHandler) Close() error {
 // wrapped Handler if the given function evaluates true. For example,
 // to only log records where the 'err' key is not nil:
 //
-//    logger.SetHandler(FilterHandler(h, func(r *Record) bool) {
+//    logger.SetHandler(FilterHandler(func(r *Record) bool {
 //        for i := 0; i < len(r.Ctx); i += 2 {
 //            if r.Ctx[i] == "err" {
 //                return r.Ctx[i+1] != nil
 //            }
 //        }
 //        return false
-//    }))
+//    }, h))
 //
-func FilterHandler(h Handler, fn func(r *Record) bool) Handler {
+func FilterHandler(fn func(r *Record) bool, h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
 		if fn(r) {
 			return h.Log(r)
@@ -121,7 +121,7 @@ func FilterHandler(h Handler, fn func(r *Record) bool) Handler {
 //    log.MatchFilterHandler("pkg", "app/ui", log.StdoutHandler)
 //
 func MatchFilterHandler(key string, value interface{}, h Handler) Handler {
-	return FilterHandler(h, func(r *Record) (pass bool) {
+	return FilterHandler(func(r *Record) (pass bool) {
 		switch key {
 		case "lvl":
 			return r.Lvl == value
@@ -137,7 +137,7 @@ func MatchFilterHandler(key string, value interface{}, h Handler) Handler {
 			}
 		}
 		return false
-	})
+	}, h)
 }
 
 // LvlFilterHandler returns a Handler that only writes
@@ -148,9 +148,9 @@ func MatchFilterHandler(key string, value interface{}, h Handler) Handler {
 //     log.LvlFilterHandler(log.Error, log.StdoutHandler)
 //
 func LvlFilterHandler(maxLvl Lvl, h Handler) Handler {
-	return FilterHandler(h, func(r *Record) (pass bool) {
+	return FilterHandler(func(r *Record) (pass bool) {
 		return r.Lvl <= maxLvl
-	})
+	}, h)
 }
 
 // A MultiHandler dispatches any write to each of its handlers.
