@@ -2,7 +2,6 @@ package log15
 
 import (
 	"bytes"
-	"runtime"
 	"testing"
 	"time"
 )

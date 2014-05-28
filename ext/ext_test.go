@@ -1,7 +1,7 @@
 package ext
 
 import (
-	log "gitub.com/inconshreveable/log15"
+	log "github.com/inconshreveable/log15"
 	"testing"
 )
 
