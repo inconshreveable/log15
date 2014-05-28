@@ -45,9 +45,8 @@ func (h errorHandler) Log(r *log.Record) error {
 // keeps a ring buffer of the given size full of the last events
 // logged into it. When Flush is called, all buffered log records
 // are written to the wrapped handler. This is extremely for
-// continuosly capturing debug level output, but only flushing it
-// if an exception condition is encountered, or the user requests
-// it.
+// continuosly capturing debug level output, but only flushing those
+// log records if an exception condition is encountered.
 func SpeculativeHandler(size int, h log.Handler) *Speculative {
 	return &Speculative{
 		handler: h,
@@ -68,26 +67,29 @@ func (h *Speculative) Log(r *log.Record) error {
 	defer h.mu.Unlock()
 	h.recs[h.idx] = r
 	h.idx = (h.idx + 1) % len(h.recs)
-	h.full = h.idx == 0
+	h.full = h.full || h.idx == 0
 	return nil
 }
 
 func (h *Speculative) Flush() {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.full {
-		for _, r := range h.recs[h.idx:] {
-			h.handler.Log(r)
+	recs := make([]*log.Record, 0)
+	func() {
+		h.mu.Lock()
+		defer h.mu.Unlock()
+		if h.full {
+			recs = append(recs, h.recs[h.idx:]...)
 		}
-	}
+		recs = append(recs, h.recs[:h.idx]...)
 
-	for _, r := range h.recs[:h.idx] {
+		// reset state
+		h.full = false
+		h.idx = 0
+	}()
+
+	// don't hold the lock while we flush to the wrapped handler
+	for _, r := range recs {
 		h.handler.Log(r)
 	}
-
-	// reset state
-	h.full = false
-	h.idx = 0
 }
 
 // HotSwapHandler wraps another handler that may swapped out
