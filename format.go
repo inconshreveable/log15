@@ -13,6 +13,7 @@ const (
 	timeFormat     = "2006-01-02T15:04:05-0700"
 	termTimeFormat = "01-02|15:04:05"
 	floatFormat    = 'f'
+	termMsgJust    = 40
 )
 
 type Format interface {
@@ -66,8 +67,8 @@ func TerminalFormat() Format {
 		}
 
 		// try to justify the log output for short messages
-		if len(r.Ctx) > 0 && len(r.Msg) < 44 {
-			b.Write(bytes.Repeat([]byte{' '}, 44-len(r.Msg)))
+		if len(r.Ctx) > 0 && len(r.Msg) < termMsgJust {
+			b.Write(bytes.Repeat([]byte{' '}, termMsgJust-len(r.Msg)))
 		}
 
 		// print the keys logfmt style
