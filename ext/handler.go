@@ -34,9 +34,8 @@ func EscalateErrHandler(h log.Handler) log.Handler {
 				}
 			}
 		}
-	}
-
-	return h.Log(r)
+		return h.Log(r)
+	})
 }
 
 // SpeculativeHandler is a handler for speculative logging. It
@@ -95,7 +94,7 @@ func (h *Speculative) Flush() {
 // HotSwapHandler is the same functionality
 // used to implement the SetHandler method for the default
 // implementation of Logger.
-func HotSwapHandler(h log.Handler) (*HotSwap) {
+func HotSwapHandler(h log.Handler) *HotSwap {
 	return &HotSwap{handler: h}
 }
 
