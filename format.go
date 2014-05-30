@@ -10,15 +10,17 @@ import (
 )
 
 const (
-	timeLayout  = "2006-01-02T15:04:05-0700"
-	timeFmt     = "01-02|15:04:05"
-	floatFormat = 'f'
+	timeFormat     = "2006-01-02T15:04:05-0700"
+	termTimeFormat = "01-02|15:04:05"
+	floatFormat    = 'f'
 )
 
 type Format interface {
 	Format(r *Record) []byte
 }
 
+// FormatFunc returns a new Format object which uses
+// the given function to perform record formatting.
 func FormatFunc(f func(*Record) []byte) Format {
 	return formatFunc(f)
 }
@@ -58,25 +60,18 @@ func TerminalFormat() Format {
 		b := &bytes.Buffer{}
 		lvl := strings.ToUpper(r.Lvl.String())
 		if color > 0 {
-			fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s] %s ", color, lvl, r.Time.Format(timeFmt), r.Msg)
+			fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s] %s ", color, lvl, r.Time.Format(termTimeFormat), r.Msg)
 		} else {
-			fmt.Fprintf(b, "[%s] [%s] %s ", lvl, r.Time.Format(timeFmt), r.Msg)
+			fmt.Fprintf(b, "[%s] [%s] %s ", lvl, r.Time.Format(termTimeFormat), r.Msg)
 		}
 
-		if len(r.Ctx) > 0 {
+		// try to justify the log output for short messages
+		if len(r.Ctx) > 0 && len(r.Msg) < 44 {
 			b.Write(bytes.Repeat([]byte{' '}, 44-len(r.Msg)))
 		}
-		for i := 0; i < len(r.Ctx); i += 2 {
-			b.WriteByte(' ')
-			k, ok := r.Ctx[i].(string)
-			if !ok {
-				fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m=\"%+v is not a string key\"", color, errorKey, r.Ctx[i])
-			} else {
-				// XXX: we should probably check that all of your key bytes aren't invalid`
-				fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m=%s", color, k, formatLogfmtValue(r.Ctx[i+1]))
-			}
-		}
-		fmt.Fprintln(b)
+
+		// print the keys logfmt style
+		logfmt(b, r.Ctx, color)
 		return b.Bytes()
 	})
 }
@@ -89,27 +84,33 @@ func TerminalFormat() Format {
 func LogfmtFormat() Format {
 	return FormatFunc(func(r *Record) []byte {
 		common := []interface{}{"t", r.Time, "lvl", r.Lvl, "msg", r.Msg}
-		return logfmt(append(common, r.Ctx...))
+		buf := &bytes.Buffer{}
+		logfmt(buf, append(common, r.Ctx...), 0)
+		return buf.Bytes()
 	})
 }
 
-func logfmt(ctx []interface{}) []byte {
-	pieces := make([]string, 0)
-
+func logfmt(buf *bytes.Buffer, ctx []interface{}, color int) {
 	for i := 0; i < len(ctx); i += 2 {
-		k, ok := ctx[i].(string)
-		var s string
-		if !ok {
-			s = fmt.Sprintf(`%s="%+v is not a string key"`, errorKey, ctx[i])
-		} else {
-			// XXX: we should probably check that all of your key bytes aren't invalid`
-			s = fmt.Sprintf(`%s=%s`, k, formatLogfmtValue(ctx[i+1]))
+		if i != 0 {
+			buf.WriteByte(' ')
 		}
 
-		pieces = append(pieces, s)
+		k, ok := ctx[i].(string)
+		v := formatLogfmtValue(ctx[i+1])
+		if !ok {
+			k, v = errorKey, formatLogfmtValue(k)
+		}
+
+		// XXX: we should probably check that all of your key bytes aren't invalid
+		if color > 0 {
+			fmt.Fprintf(buf, "\x1b[%dm%s\x1b[0m=%s", color, k, v)
+		} else {
+			fmt.Fprintf(buf, "%s=%s", k, v)
+		}
 	}
 
-	return []byte(strings.Join(append(pieces, "\n"), " "))
+	buf.WriteByte('\n')
 }
 
 // JsonFormat formats log records as JSON objects separated by newlines.
@@ -163,7 +164,7 @@ func JsonFormatEx(pretty, lineSeparated bool) Format {
 func formatShared(value interface{}) interface{} {
 	switch v := value.(type) {
 	case time.Time:
-		return v.Format(timeLayout)
+		return v.Format(timeFormat)
 
 	case error:
 		return v.Error()

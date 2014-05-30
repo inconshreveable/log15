@@ -119,7 +119,7 @@ func TestLogfmt(t *testing.T) {
 
 	// skip timestamp in comparison
 	got := buf.Bytes()[27:buf.Len()]
-	expected := []byte(`lvl=eror msg="some message" x=1 y=3.200 equals="=" quote="\"" ` + "\n")
+	expected := []byte(`lvl=eror msg="some message" x=1 y=3.200 equals="=" quote="\""` + "\n")
 	if !bytes.Equal(got, expected) {
 		t.Fatalf("Got %s, expected %s", got, expected)
 	}
@@ -231,7 +231,7 @@ func TestNetHandler(t *testing.T) {
 		}
 
 		got := s[27:]
-		expected := "lvl=info msg=test x=1 \n"
+		expected := "lvl=info msg=test x=1\n"
 		if got != expected {
 			t.Errorf("Got log line %s, expected %s", got, expected)
 		}
