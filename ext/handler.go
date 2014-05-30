@@ -34,7 +34,7 @@ func EscalateErrHandler(h log.Handler) log.Handler {
 				}
 			}
 		}
-	}
+	})
 
 	return h.Log(r)
 }
