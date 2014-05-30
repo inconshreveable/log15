@@ -1,7 +1,7 @@
 package ext
 
 import (
-	log "github.com/inconshreveable/log15"
+	log "gopkg.in/inconshreveable/log15.v2"
 	"sync"
 )
 

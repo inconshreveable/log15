@@ -1,7 +1,7 @@
 package log15
 
 import (
-	"github.com/inconshreveable/log15/term"
+	"gopkg.in/inconshreveable/log15.v2/term"
 	"os"
 )
 
