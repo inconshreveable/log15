@@ -18,7 +18,7 @@ Package log15 provides an opinionated, simple toolkit for best-practice logging 
 
 The package documentation is extensive and complete. Browse on godoc:
 
-#### [log15 API Documentation](https://godoc.org/github.com/inconshreveable/log15)
+#### [log15 API Documentation](https://godoc.org/gopkg.in/inconshreveable/log15.v2)
 
 ## Versioning
 The API of the master branch of log15 should always be considered unstable. Using a stable version
