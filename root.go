@@ -23,10 +23,6 @@ func init() {
 	root = New()
 }
 
-func deepNew(ctx ...interface{}) Logger {
-	return &logger{ctx, &swapHandler{handler: StdoutHandler}}
-}
-
 // New returns a new logger with the given context.
 func New(ctx ...interface{}) Logger {
 	return &logger{ctx, &swapHandler{handler: StdoutHandler}}
