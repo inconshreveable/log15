@@ -20,13 +20,16 @@ func init() {
 		StderrHandler = StreamHandler(os.Stderr, TerminalFormat())
 	}
 
-	root = &logger{[]interface{}{}, &swapHandler{handler: StdoutHandler}}
+	root = New()
+}
+
+func deepNew(ctx ...interface{}) Logger {
+	return &logger{ctx, &swapHandler{handler: StdoutHandler}}
 }
 
 // New returns a new logger with the given context.
-// New is a convenient alias for Root().New
 func New(ctx ...interface{}) Logger {
-	return root.New(ctx...)
+	return &logger{ctx, &swapHandler{handler: StdoutHandler}}
 }
 
 // Root returns the root logger
