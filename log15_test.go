@@ -211,7 +211,7 @@ func TestLvlFilterHandler(t *testing.T) {
 func TestNetHandler(t *testing.T) {
 	t.Parallel()
 
-	l, err := net.Listen("tcp", ":0")
+	l, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		t.Fatalf("Failed to listen: %v", l)
 	}
@@ -240,7 +240,11 @@ func TestNetHandler(t *testing.T) {
 	}()
 
 	lg := New()
-	lg.SetHandler(Must.NetHandler("tcp", l.Addr().String(), LogfmtFormat()))
+	h, err := NetHandler("tcp", l.Addr().String(), LogfmtFormat())
+	if err != nil {
+		t.Fatal(err)
+	}
+	lg.SetHandler(h)
 	lg.Info("test", "x", 1)
 
 	select {
