@@ -350,3 +350,16 @@ func TestFailoverHandler(t *testing.T) {
 		t.Fatalf("expected failover ctx. got: %s, expected %s", got, expected)
 	}
 }
+
+// https://github.com/inconshreveable/log15/issues/16
+func TestIndependentSetHandler(t *testing.T) {
+	t.Parallel()
+
+	parent, _, r := testLogger()
+	child := parent.New()
+	child.SetHandler(DiscardHandler())
+	parent.Info("test")
+	if r.Msg != "test" {
+		t.Fatalf("parent handler affected by child")
+	}
+}
