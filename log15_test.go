@@ -363,3 +363,16 @@ func TestIndependentSetHandler(t *testing.T) {
 		t.Fatalf("parent handler affected by child")
 	}
 }
+
+// https://github.com/inconshreveable/log15/issues/16
+func TestInheritHandler(t *testing.T) {
+	t.Parallel()
+
+	parent, _, r := testLogger()
+	child := parent.New()
+	parent.SetHandler(DiscardHandler())
+	child.Info("test")
+	if r.Msg == "test" {
+		t.Fatalf("child handler affected not affected by parent")
+	}
+}
