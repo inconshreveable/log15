@@ -94,7 +94,7 @@ func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
 }
 
 func (l *logger) New(ctx ...interface{}) Logger {
-	return &logger{append(l.ctx, normalize(ctx)...), l.h}
+	return &logger{append(l.ctx, normalize(ctx)...), &swapHandler{handler: l.h}}
 }
 
 func (l *logger) Debug(msg string, ctx ...interface{}) {

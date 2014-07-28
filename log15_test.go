@@ -211,7 +211,7 @@ func TestLvlFilterHandler(t *testing.T) {
 func TestNetHandler(t *testing.T) {
 	t.Parallel()
 
-	l, err := net.Listen("tcp", ":0")
+	l, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		t.Fatalf("Failed to listen: %v", l)
 	}
@@ -240,7 +240,11 @@ func TestNetHandler(t *testing.T) {
 	}()
 
 	lg := New()
-	lg.SetHandler(Must.NetHandler("tcp", l.Addr().String(), LogfmtFormat()))
+	h, err := NetHandler("tcp", l.Addr().String(), LogfmtFormat())
+	if err != nil {
+		t.Fatal(err)
+	}
+	lg.SetHandler(h)
 	lg.Info("test", "x", 1)
 
 	select {
@@ -344,5 +348,31 @@ func TestFailoverHandler(t *testing.T) {
 	expected := "failover_err_0"
 	if got != expected {
 		t.Fatalf("expected failover ctx. got: %s, expected %s", got, expected)
+	}
+}
+
+// https://github.com/inconshreveable/log15/issues/16
+func TestIndependentSetHandler(t *testing.T) {
+	t.Parallel()
+
+	parent, _, r := testLogger()
+	child := parent.New()
+	child.SetHandler(DiscardHandler())
+	parent.Info("test")
+	if r.Msg != "test" {
+		t.Fatalf("parent handler affected by child")
+	}
+}
+
+// https://github.com/inconshreveable/log15/issues/16
+func TestInheritHandler(t *testing.T) {
+	t.Parallel()
+
+	parent, _, r := testLogger()
+	child := parent.New()
+	parent.SetHandler(DiscardHandler())
+	child.Info("test")
+	if r.Msg == "test" {
+		t.Fatalf("child handler affected not affected by parent")
 	}
 }
