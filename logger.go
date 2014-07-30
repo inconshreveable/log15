@@ -5,7 +5,9 @@ import (
 	"time"
 )
 
+const timeKey = "t"
 const lvlKey = "lvl"
+const msgKey = "msg"
 const errorKey = "LOG15_ERROR"
 
 type Lvl int
@@ -57,10 +59,17 @@ func LvlFromString(lvlString string) (Lvl, error) {
 
 // A Record is what a Logger asks its handler to write
 type Record struct {
-	Time time.Time
-	Lvl  Lvl
+	Time     time.Time
+	Lvl      Lvl
+	Msg      string
+	Ctx      []interface{}
+	KeyNames RecordKeyNames
+}
+
+type RecordKeyNames struct {
+	Time string
 	Msg  string
-	Ctx  []interface{}
+	Lvl  string
 }
 
 // A Logger writes key/value pairs to a Handler
@@ -90,6 +99,11 @@ func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
 		Lvl:  lvl,
 		Msg:  msg,
 		Ctx:  append(l.ctx, normalize(ctx)...),
+		KeyNames: RecordKeyNames{
+			Time: timeKey,
+			Msg:  msgKey,
+			Lvl:  lvlKey,
+		},
 	})
 }
 
