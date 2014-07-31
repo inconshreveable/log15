@@ -6,6 +6,8 @@ import (
 	"net"
 	"os"
 	"reflect"
+	"runtime"
+	"strings"
 	"sync"
 )
 
@@ -89,6 +91,47 @@ type closingHandler struct {
 
 func (h *closingHandler) Close() error {
 	return h.WriteCloser.Close()
+}
+
+// CallerFileHandler returns a Handler that adds the line number and file of
+// the calling function to the context with key "caller". If withPkg is true,
+// the file name is preceded by its path (up to the last "src" folder if
+// present).
+func CallerFileHandler(withPkg bool, h Handler) Handler {
+	return FuncHandler(func(r *Record) error {
+		var sep string
+		if withPkg {
+			sep = "/src/"
+		} else {
+			sep = "/"
+		}
+		file := r.CallFile
+		if i := strings.LastIndex(file, sep); i != -1 {
+			file = file[i+len(sep):]
+		}
+		r.Ctx = append(r.Ctx, "caller", fmt.Sprintf("%s:%d", file, r.CallLine))
+		h.Log(r)
+		return nil
+	})
+}
+
+// CallerFuncHandler returns a Handler that adds the calling function name to
+// the context with key "func". If withPkg is true, the function name is
+// preceded by its package's import path.
+func CallerFuncHandler(withPkg bool, h Handler) Handler {
+	return FuncHandler(func(r *Record) error {
+		if fn := runtime.FuncForPC(r.CallPC); fn != nil {
+			name := fn.Name()
+			if !withPkg {
+				if i := strings.LastIndex(name, "."); i != -1 {
+					name = name[i+1:]
+				}
+			}
+			r.Ctx = append(r.Ctx, "func", name)
+		}
+		h.Log(r)
+		return nil
+	})
 }
 
 // FilterHandler returns a Handler that only writes records to the

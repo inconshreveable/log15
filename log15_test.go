@@ -5,7 +5,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
+	"regexp"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -374,5 +377,82 @@ func TestInheritHandler(t *testing.T) {
 	child.Info("test")
 	if r.Msg == "test" {
 		t.Fatalf("child handler affected not affected by parent")
+	}
+}
+
+func TestCallerFileHandler(t *testing.T) {
+	t.Parallel()
+
+	data := []struct {
+		withPkg bool
+		regex   string
+	}{
+		{false, "log15_test.go:"},
+		{true, ".*/.*/log15.*/log15_test.go:"},
+	}
+
+	for _, d := range data {
+		l := New()
+		h, r := testHandler()
+		l.SetHandler(CallerFileHandler(true, h))
+
+		_, _, line, _ := runtime.Caller(0)
+		l.Info("baz")
+
+		if len(r.Ctx) != 2 {
+			t.Fatalf("Expected caller in record context. Got length %d, expected %d", len(r.Ctx), 2)
+		}
+
+		if r.Ctx[0] != "caller" {
+			t.Fatalf("Wrong context key, got %s expected %s", r.Ctx[0], "caller")
+		}
+
+		s, ok := r.Ctx[1].(string)
+		if !ok {
+			t.Fatalf("Wrong context value type, got %T expected string", r.Ctx[1])
+		}
+
+		regex := fmt.Sprint(d.regex, line+1)
+		if ok, err := regexp.MatchString(regex, s); err != nil {
+			t.Fatalf("Error matching %s to regex %s: %v", s, regex, err)
+		} else if !ok {
+			t.Fatalf("Wrong context value, got %s expected string matching %s", s, regex)
+		}
+	}
+}
+
+func TestCallerFuncHandler(t *testing.T) {
+	t.Parallel()
+
+	data := []struct {
+		withPkg bool
+		regex   string
+	}{
+		{false, "TestCallerFuncHandler"},
+		{true, ".*\\.TestCallerFuncHandler"},
+	}
+
+	for _, d := range data {
+		l := New()
+		h, r := testHandler()
+		l.SetHandler(CallerFuncHandler(d.withPkg, h))
+
+		l.Info("baz")
+
+		if len(r.Ctx) != 2 {
+			t.Fatalf("Expected caller in record context. Got length %d, expected %d", len(r.Ctx), 2)
+		}
+
+		if r.Ctx[0] != "func" {
+			t.Fatalf("Wrong context key, got %s expected %s", r.Ctx[0], "func")
+		}
+
+		if s, ok := r.Ctx[1].(string); !ok {
+			t.Fatalf("Wrong context value type, got %T expected string", r.Ctx[1])
+		} else if ok, err := regexp.MatchString(d.regex, s); err != nil {
+			t.Fatalf("Error matching %s to regex %s: %v", s, d.regex, err)
+		} else if !ok {
+			t.Fatalf("Wrong context value, got %s expected string matching %s", s, d.regex)
+		}
 	}
 }

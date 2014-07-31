@@ -2,6 +2,7 @@ package log15
 
 import (
 	"fmt"
+	"runtime"
 	"time"
 )
 
@@ -57,10 +58,13 @@ func LvlFromString(lvlString string) (Lvl, error) {
 
 // A Record is what a Logger asks its handler to write
 type Record struct {
-	Time time.Time
-	Lvl  Lvl
-	Msg  string
-	Ctx  []interface{}
+	Time     time.Time
+	Lvl      Lvl
+	Msg      string
+	Ctx      []interface{}
+	CallPC   uintptr
+	CallFile string
+	CallLine int
 }
 
 // A Logger writes key/value pairs to a Handler
@@ -85,12 +89,16 @@ type logger struct {
 }
 
 func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
-	l.h.Log(&Record{
+	r := Record{
 		Time: time.Now(),
 		Lvl:  lvl,
 		Msg:  msg,
 		Ctx:  append(l.ctx, normalize(ctx)...),
-	})
+	}
+	if pc, file, line, ok := runtime.Caller(2); ok {
+		r.CallPC, r.CallFile, r.CallLine = pc, file, line
+	}
+	l.h.Log(&r)
 }
 
 func (l *logger) New(ctx ...interface{}) Logger {

@@ -38,6 +38,24 @@ func BenchmarkLinenum(b *testing.B) {
 	}
 }
 
+func BenchmarkCallerFileHandler(b *testing.B) {
+	lg := New()
+	lg.SetHandler(CallerFileHandler(false, DiscardHandler()))
+
+	for i := 0; i < b.N; i++ {
+		lg.Info("test message")
+	}
+}
+
+func BenchmarkCallerFuncHandler(b *testing.B) {
+	lg := New()
+	lg.SetHandler(CallerFuncHandler(true, DiscardHandler()))
+
+	for i := 0; i < b.N; i++ {
+		lg.Info("test message")
+	}
+}
+
 func BenchmarkLogfmtNoCtx(b *testing.B) {
 	r := Record{
 		Time: time.Now(),
