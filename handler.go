@@ -97,8 +97,12 @@ func (h *closingHandler) Close() error {
 // the calling function to the context with key "caller".
 func CallerFileHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
+		pc := r.CallPC[0]
+		if pc == 0 {
+			r.Ctx = append(r.Ctx, "caller", "???")
+		}
 		const sep = "/"
-		file, line := runtime.FuncForPC(r.CallPC[0]).FileLine(r.CallPC[0])
+		file, line := runtime.FuncForPC(pc).FileLine(pc)
 		if i := strings.LastIndex(file, sep); i != -1 {
 			file = file[i+len(sep):]
 		}
@@ -112,6 +116,9 @@ func CallerFileHandler(h Handler) Handler {
 // the context with key "fn".
 func CallerFuncHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
+		if r.CallPC[0] == 0 {
+			r.Ctx = append(r.Ctx, "fn", "???")
+		}
 		if fn := runtime.FuncForPC(r.CallPC[0]); fn != nil {
 			name := fn.Name()
 			r.Ctx = append(r.Ctx, "fn", name)
