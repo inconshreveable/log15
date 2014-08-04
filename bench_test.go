@@ -40,7 +40,7 @@ func BenchmarkLinenum(b *testing.B) {
 
 func BenchmarkCallerFileHandler(b *testing.B) {
 	lg := New()
-	lg.SetHandler(CallerFileHandler(false, DiscardHandler()))
+	lg.SetHandler(CallerFileHandler(DiscardHandler()))
 
 	for i := 0; i < b.N; i++ {
 		lg.Info("test message")
@@ -49,7 +49,7 @@ func BenchmarkCallerFileHandler(b *testing.B) {
 
 func BenchmarkCallerFuncHandler(b *testing.B) {
 	lg := New()
-	lg.SetHandler(CallerFuncHandler(true, DiscardHandler()))
+	lg.SetHandler(CallerFuncHandler(DiscardHandler()))
 
 	for i := 0; i < b.N; i++ {
 		lg.Info("test message")

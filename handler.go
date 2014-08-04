@@ -94,17 +94,10 @@ func (h *closingHandler) Close() error {
 }
 
 // CallerFileHandler returns a Handler that adds the line number and file of
-// the calling function to the context with key "caller". If withPkg is true,
-// the file name is preceded by its path (up to the last "src" folder if
-// present).
-func CallerFileHandler(withPkg bool, h Handler) Handler {
+// the calling function to the context with key "caller".
+func CallerFileHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
-		var sep string
-		if withPkg {
-			sep = "/src/"
-		} else {
-			sep = "/"
-		}
+		const sep = "/"
 		file := r.CallFile
 		if i := strings.LastIndex(file, sep); i != -1 {
 			file = file[i+len(sep):]
@@ -116,18 +109,12 @@ func CallerFileHandler(withPkg bool, h Handler) Handler {
 }
 
 // CallerFuncHandler returns a Handler that adds the calling function name to
-// the context with key "func". If withPkg is true, the function name is
-// preceded by its package's import path.
-func CallerFuncHandler(withPkg bool, h Handler) Handler {
+// the context with key "fn".
+func CallerFuncHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
 		if fn := runtime.FuncForPC(r.CallPC); fn != nil {
 			name := fn.Name()
-			if !withPkg {
-				if i := strings.LastIndex(name, "."); i != -1 {
-					name = name[i+1:]
-				}
-			}
-			r.Ctx = append(r.Ctx, "func", name)
+			r.Ctx = append(r.Ctx, "fn", name)
 		}
 		h.Log(r)
 		return nil
