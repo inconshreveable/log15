@@ -98,11 +98,11 @@ func (h *closingHandler) Close() error {
 func CallerFileHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
 		const sep = "/"
-		file := r.CallFile
+		file, line := runtime.FuncForPC(r.CallPC[0]).FileLine(r.CallPC[0])
 		if i := strings.LastIndex(file, sep); i != -1 {
 			file = file[i+len(sep):]
 		}
-		r.Ctx = append(r.Ctx, "caller", fmt.Sprintf("%s:%d", file, r.CallLine))
+		r.Ctx = append(r.Ctx, "caller", fmt.Sprintf("%s:%d", file, line))
 		h.Log(r)
 		return nil
 	})
@@ -112,7 +112,7 @@ func CallerFileHandler(h Handler) Handler {
 // the context with key "fn".
 func CallerFuncHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
-		if fn := runtime.FuncForPC(r.CallPC); fn != nil {
+		if fn := runtime.FuncForPC(r.CallPC[0]); fn != nil {
 			name := fn.Name()
 			r.Ctx = append(r.Ctx, "fn", name)
 		}

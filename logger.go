@@ -58,13 +58,11 @@ func LvlFromString(lvlString string) (Lvl, error) {
 
 // A Record is what a Logger asks its handler to write
 type Record struct {
-	Time     time.Time
-	Lvl      Lvl
-	Msg      string
-	Ctx      []interface{}
-	CallPC   uintptr
-	CallFile string
-	CallLine int
+	Time   time.Time
+	Lvl    Lvl
+	Msg    string
+	Ctx    []interface{}
+	CallPC [1]uintptr
 }
 
 // A Logger writes key/value pairs to a Handler
@@ -95,9 +93,7 @@ func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
 		Msg:  msg,
 		Ctx:  append(l.ctx, normalize(ctx)...),
 	}
-	if pc, file, line, ok := runtime.Caller(2); ok {
-		r.CallPC, r.CallFile, r.CallLine = pc, file, line
-	}
+	runtime.Callers(3, r.CallPC[:])
 	l.h.Log(&r)
 }
 
