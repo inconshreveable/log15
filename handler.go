@@ -97,9 +97,17 @@ func (h *closingHandler) Close() error {
 // the calling function to the context with key "caller".
 func CallerFileHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
-		pc := r.CallPC[0]
+		// BUG(ChrisHines): Subtracting one from pc is a work around for
+		// https://code.google.com/p/go/issues/detail?id=7690. The idea for
+		// this work around comes from rsc's initial patch at
+		// https://codereview.appspot.com/84100043/#ps20001, but as noted in
+		// the issue discussion, it is not a complete fix since it doesn't
+		// handle some cases involving signals. Just the same, it handles all
+		// of the other cases I have tested.
+		pc := r.CallPC[0] - 1 // Remove once the Go issue is fixed.
 		if pc == 0 {
 			r.Ctx = append(r.Ctx, "caller", "???")
+			return nil
 		}
 		const sep = "/"
 		file, line := runtime.FuncForPC(pc).FileLine(pc)
