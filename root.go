@@ -1,12 +1,13 @@
 package log15
 
 import (
-	"gopkg.in/inconshreveable/log15.v2/term"
 	"os"
+
+	"gopkg.in/inconshreveable/log15.v2/term"
 )
 
 var (
-	root          Logger
+	root          *logger
 	StdoutHandler = StreamHandler(os.Stdout, LogfmtFormat())
 	StderrHandler = StreamHandler(os.Stderr, LogfmtFormat())
 )
@@ -34,27 +35,31 @@ func Root() Logger {
 	return root
 }
 
+// The following functions bypass the exported logger methods (logger.Debug,
+// etc.) to keep the call depth the same for all paths to logger.write so
+// runtime.Caller(2) always refers to the call site in client code.
+
 // Debug is a convenient alias for Root().Debug
 func Debug(msg string, ctx ...interface{}) {
-	root.Debug(msg, ctx...)
+	root.write(msg, LvlDebug, ctx)
 }
 
 // Info is a convenient alias for Root().Info
 func Info(msg string, ctx ...interface{}) {
-	root.Info(msg, ctx...)
+	root.write(msg, LvlInfo, ctx)
 }
 
 // Warn is a convenient alias for Root().Warn
 func Warn(msg string, ctx ...interface{}) {
-	root.Warn(msg, ctx...)
+	root.write(msg, LvlWarn, ctx)
 }
 
 // Error is a convenient alias for Root().Error
 func Error(msg string, ctx ...interface{}) {
-	root.Error(msg, ctx...)
+	root.write(msg, LvlError, ctx)
 }
 
 // Crit is a convenient alias for Root().Crit
 func Crit(msg string, ctx ...interface{}) {
-	root.Crit(msg, ctx...)
+	root.write(msg, LvlCrit, ctx)
 }

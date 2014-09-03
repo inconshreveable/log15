@@ -6,6 +6,8 @@ import (
 	"net"
 	"os"
 	"reflect"
+	"runtime"
+	"strings"
 	"sync"
 )
 
@@ -91,6 +93,49 @@ func (h *closingHandler) Close() error {
 	return h.WriteCloser.Close()
 }
 
+// CallerFileHandler returns a Handler that adds the line number and file of
+// the calling function to the context with key "caller".
+func CallerFileHandler(h Handler) Handler {
+	return FuncHandler(func(r *Record) error {
+		// BUG(ChrisHines): Subtracting one from pc is a work around for
+		// https://code.google.com/p/go/issues/detail?id=7690. The idea for
+		// this work around comes from rsc's initial patch at
+		// https://codereview.appspot.com/84100043/#ps20001, but as noted in
+		// the issue discussion, it is not a complete fix since it doesn't
+		// handle some cases involving signals. Just the same, it handles all
+		// of the other cases I have tested.
+		pc := r.CallPC[0] - 1 // Remove once the Go issue is fixed.
+		if pc == 0 {
+			r.Ctx = append(r.Ctx, "caller", "???")
+			return nil
+		}
+		const sep = "/"
+		file, line := runtime.FuncForPC(pc).FileLine(pc)
+		if i := strings.LastIndex(file, sep); i != -1 {
+			file = file[i+len(sep):]
+		}
+		r.Ctx = append(r.Ctx, "caller", fmt.Sprintf("%s:%d", file, line))
+		h.Log(r)
+		return nil
+	})
+}
+
+// CallerFuncHandler returns a Handler that adds the calling function name to
+// the context with key "fn".
+func CallerFuncHandler(h Handler) Handler {
+	return FuncHandler(func(r *Record) error {
+		if r.CallPC[0] == 0 {
+			r.Ctx = append(r.Ctx, "fn", "???")
+		}
+		if fn := runtime.FuncForPC(r.CallPC[0]); fn != nil {
+			name := fn.Name()
+			r.Ctx = append(r.Ctx, "fn", name)
+		}
+		h.Log(r)
+		return nil
+	})
+}
+
 // FilterHandler returns a Handler that only writes records to the
 // wrapped Handler if the given function evaluates true. For example,
 // to only log records where the 'err' key is not nil:
@@ -123,11 +168,11 @@ func FilterHandler(fn func(r *Record) bool, h Handler) Handler {
 func MatchFilterHandler(key string, value interface{}, h Handler) Handler {
 	return FilterHandler(func(r *Record) (pass bool) {
 		switch key {
-		case "lvl":
+		case r.KeyNames.Lvl:
 			return r.Lvl == value
-		case "t":
+		case r.KeyNames.Time:
 			return r.Time == value
-		case "msg":
+		case r.KeyNames.Msg:
 			return r.Msg == value
 		}
 
