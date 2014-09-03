@@ -168,11 +168,11 @@ func FilterHandler(fn func(r *Record) bool, h Handler) Handler {
 func MatchFilterHandler(key string, value interface{}, h Handler) Handler {
 	return FilterHandler(func(r *Record) (pass bool) {
 		switch key {
-		case "lvl":
+		case r.KeyNames.Lvl:
 			return r.Lvl == value
-		case "t":
+		case r.KeyNames.Time:
 			return r.Time == value
-		case "msg":
+		case r.KeyNames.Msg:
 			return r.Msg == value
 		}
 

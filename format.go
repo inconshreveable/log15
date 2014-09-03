@@ -84,7 +84,7 @@ func TerminalFormat() Format {
 //
 func LogfmtFormat() Format {
 	return FormatFunc(func(r *Record) []byte {
-		common := []interface{}{"t", r.Time, "lvl", r.Lvl, "msg", r.Msg}
+		common := []interface{}{r.KeyNames.Time, r.Time, r.KeyNames.Lvl, r.Lvl, r.KeyNames.Msg, r.Msg}
 		buf := &bytes.Buffer{}
 		logfmt(buf, append(common, r.Ctx...), 0)
 		return buf.Bytes()
@@ -134,9 +134,9 @@ func JsonFormatEx(pretty, lineSeparated bool) Format {
 	return FormatFunc(func(r *Record) []byte {
 		props := make(map[string]interface{})
 
-		props["t"] = r.Time
-		props["lvl"] = r.Lvl
-		props["msg"] = r.Msg
+		props[r.KeyNames.Time] = r.Time
+		props[r.KeyNames.Lvl] = r.Lvl
+		props[r.KeyNames.Msg] = r.Msg
 
 		for i := 0; i < len(r.Ctx); i += 2 {
 			k, ok := r.Ctx[i].(string)
