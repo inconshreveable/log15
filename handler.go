@@ -314,6 +314,10 @@ func LazyHandler(h Handler) Handler {
 					hadErr = true
 					r.Ctx[i] = err
 				} else {
+					if cs, ok := v.(stack.Trace); ok {
+						v = cs.TrimBelow(stack.Call(r.CallPC[0])).
+							TrimAboveName("main.main")
+					}
 					r.Ctx[i] = v
 				}
 			}
