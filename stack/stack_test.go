@@ -196,7 +196,7 @@ func BenchmarkCallers(b *testing.B) {
 	}
 }
 
-func deepStack(depth int, b *testing.B) stack.Calls {
+func deepStack(depth int, b *testing.B) stack.Trace {
 	if depth > 0 {
 		return deepStack(depth-1, b)
 	}
