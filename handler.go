@@ -1,14 +1,15 @@
 package log15
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net"
 	"os"
 	"reflect"
-	"runtime"
-	"strings"
 	"sync"
+
+	"github.com/inconshreveable/log15/stack"
 )
 
 // A Logger prints its log records by writing to a Handler.
@@ -97,26 +98,9 @@ func (h *closingHandler) Close() error {
 // the calling function to the context with key "caller".
 func CallerFileHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
-		// BUG(ChrisHines): Subtracting one from pc is a work around for
-		// https://code.google.com/p/go/issues/detail?id=7690. The idea for
-		// this work around comes from rsc's initial patch at
-		// https://codereview.appspot.com/84100043/#ps20001, but as noted in
-		// the issue discussion, it is not a complete fix since it doesn't
-		// handle some cases involving signals. Just the same, it handles all
-		// of the other cases I have tested.
-		pc := r.CallPC[0] - 1 // Remove once the Go issue is fixed.
-		if pc == 0 {
-			r.Ctx = append(r.Ctx, "caller", "???")
-			return nil
-		}
-		const sep = "/"
-		file, line := runtime.FuncForPC(pc).FileLine(pc)
-		if i := strings.LastIndex(file, sep); i != -1 {
-			file = file[i+len(sep):]
-		}
-		r.Ctx = append(r.Ctx, "caller", fmt.Sprintf("%s:%d", file, line))
-		h.Log(r)
-		return nil
+		call := stack.Call(r.CallPC[0])
+		r.Ctx = append(r.Ctx, "caller", fmt.Sprint(call))
+		return h.Log(r)
 	})
 }
 
@@ -124,15 +108,35 @@ func CallerFileHandler(h Handler) Handler {
 // the context with key "fn".
 func CallerFuncHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
-		if r.CallPC[0] == 0 {
-			r.Ctx = append(r.Ctx, "fn", "???")
+		call := stack.Call(r.CallPC[0])
+		r.Ctx = append(r.Ctx, "fn", fmt.Sprintf("%+n", call))
+		return h.Log(r)
+	})
+}
+
+// CallerStackHandler returns a Handler that adds a stack trace to the context
+// with key "stack". The stack trace is formated as a space separated list of
+// call sites inside matching []'s. The most recent call site is listed first.
+// Each call site is formatted according to format. See the documentation of
+// log15/stack.Call.Format for the list of supported formats.
+func CallerStackHandler(format string, h Handler) Handler {
+	return FuncHandler(func(r *Record) error {
+		s := stack.Callers().
+			TrimBelow(stack.Call(r.CallPC[0])).
+			TrimAboveName("main.main")
+		if len(s) > 0 {
+			buf := &bytes.Buffer{}
+			buf.WriteByte('[')
+			for i, pc := range s {
+				if i > 0 {
+					buf.WriteByte(' ')
+				}
+				fmt.Fprintf(buf, format, pc)
+			}
+			buf.WriteByte(']')
+			r.Ctx = append(r.Ctx, "stack", buf.String())
 		}
-		if fn := runtime.FuncForPC(r.CallPC[0]); fn != nil {
-			name := fn.Name()
-			r.Ctx = append(r.Ctx, "fn", name)
-		}
-		h.Log(r)
-		return nil
+		return h.Log(r)
 	})
 }
 
