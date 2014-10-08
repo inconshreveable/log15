@@ -16,4 +16,4 @@ The process to release a new API-compatible version is described below. For the 
 1. `git commit`
 1. `git tag`, find the latest tag of the style v2.X.
 1. `git tag v2.X+1` If the last version was v2.6, you would run `git tag v2.7`
-1. git push --tags git@github.com:inconshreveable/log15.git v2
+1. `git push --tags git@github.com:inconshreveable/log15.git v2`
