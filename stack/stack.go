@@ -14,17 +14,6 @@ import (
 // runtime.Callers and consumed by runtime.FuncForPC.
 type Call uintptr
 
-// name returns the import path qualified name of the function containing the
-// call.
-func (pc Call) name() string {
-	pcFix := uintptr(pc) - 1 // work around for go issue #7690
-	fn := runtime.FuncForPC(pcFix)
-	if fn == nil {
-		return "???"
-	}
-	return fn.Name()
-}
-
 // Format implements fmt.Formatter with support for the following verbs.
 //
 //    %s    source file
@@ -61,9 +50,28 @@ func (pc Call) Format(s fmt.State, c rune) {
 		case s.Flag('#'):
 			// done
 		case s.Flag('+'):
-			fname := fn.Name()
+			// Here we want to get the source file path relative to the
+			// compile time GOPATH. As of Go 1.3.x there is no direct way to
+			// know the compiled GOPATH at runtime, but we can infer the
+			// number of path segments in the GOPATH. We note that fn.Name()
+			// returns the function name qualified by the import path, which
+			// does not include the GOPATH. Thus we can trim segments from the
+			// beginning of the file path until the number of path separators
+			// remaining is one more than the number of path separators in the
+			// function name. For example, given:
+			//
+			//    GOPATH     /home/user
+			//    file       /home/user/src/pkg/sub/file.go
+			//    fn.Name()  pkg/sub.Type.Method
+			//
+			// We want to produce:
+			//
+			//    pkg/sub/file.go
+			//
+			// From this we can easily see that fn.Name() has one less path
+			// separator than our desired output.
 			const sep = "/"
-			impCnt := strings.Count(fname, sep) + 1
+			impCnt := strings.Count(fn.Name(), sep) + 1
 			pathCnt := strings.Count(file, sep)
 			for pathCnt > impCnt {
 				i := strings.Index(file, sep)
@@ -104,12 +112,23 @@ func (pc Call) Format(s fmt.State, c rune) {
 	}
 }
 
+// name returns the import path qualified name of the function containing the
+// call.
+func (pc Call) name() string {
+	pcFix := uintptr(pc) - 1 // work around for go issue #7690
+	fn := runtime.FuncForPC(pcFix)
+	if fn == nil {
+		return "???"
+	}
+	return fn.Name()
+}
+
 // Trace records a sequence of function invocations from a goroutine stack.
 type Trace []Call
 
-// Format implements fmt.Formatter. It should not be necessary for Trace to
-// implement fmt.Formatter. This method is here as a work around for
-// https://code.google.com/p/go/issues/detail?id=8835.
+// Format implements fmt.Formatter by printing the Trace as square brackes ([,
+// ]) surrounding a space separated list of Calls each formatted with the
+// supplied verb and options.
 func (pcs Trace) Format(s fmt.State, c rune) {
 	s.Write([]byte("["))
 	for i, pc := range pcs {
