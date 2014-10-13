@@ -2,7 +2,6 @@ package log15
 
 import (
 	"bytes"
-	"runtime"
 	"testing"
 	"time"
 )
@@ -25,16 +24,6 @@ func BenchmarkDiscard(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		lg.Info("test message")
-	}
-}
-
-func BenchmarkLinenum(b *testing.B) {
-	lg := New()
-	lg.SetHandler(DiscardHandler())
-
-	for i := 0; i < b.N; i++ {
-		_, file, line, _ := runtime.Caller(0)
-		lg.Info("test message", "file", file, "line", line)
 	}
 }
 
