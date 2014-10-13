@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/inconshreveable/log15/stack"
+	"gopkg.in/inconshreveable/log15.v2/stack"
 )
 
 // A Logger prints its log records by writing to a Handler.
