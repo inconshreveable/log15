@@ -4,6 +4,7 @@ package stack
 
 import (
 	"fmt"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -123,6 +124,16 @@ func (pc Call) name() string {
 	return fn.Name()
 }
 
+func (pc Call) file() string {
+	pcFix := uintptr(pc) - 1 // work around for go issue #7690
+	fn := runtime.FuncForPC(pcFix)
+	if fn == nil {
+		return "???"
+	}
+	file, _ := fn.FileLine(pcFix)
+	return file
+}
+
 // Trace records a sequence of function invocations from a goroutine stack.
 type Trace []Call
 
@@ -187,6 +198,32 @@ func (pcs Trace) TrimBelowName(name string) Trace {
 // highest with function name name removed.
 func (pcs Trace) TrimAboveName(name string) Trace {
 	for len(pcs) > 0 && pcs[len(pcs)-1].name() != name {
+		pcs = pcs[:len(pcs)-1]
+	}
+	return pcs
+}
+
+var goroot string
+
+func init() {
+	goroot = filepath.ToSlash(runtime.GOROOT())
+	if runtime.GOOS == "windows" {
+		goroot = strings.ToLower(goroot)
+	}
+}
+
+func inGoroot(path string) bool {
+	if runtime.GOOS == "windows" {
+		path = strings.ToLower(path)
+	}
+	return strings.HasPrefix(path, goroot)
+}
+
+// TrimRuntime returns a slice of the Trace with the topmost entries from the
+// go runtime removed. It considers any calls originating from files under
+// GOROOT as part of the runtime.
+func (pcs Trace) TrimRuntime() Trace {
+	for len(pcs) > 0 && inGoroot(pcs[len(pcs)-1].file()) {
 		pcs = pcs[:len(pcs)-1]
 	}
 	return pcs
