@@ -85,3 +85,45 @@ func BenchmarkMultiLevelFilter(b *testing.B) {
 		lg.Info("test message")
 	}
 }
+
+func BenchmarkDescendant1(b *testing.B) {
+	lg := New()
+	lg.SetHandler(DiscardHandler())
+	lg = lg.New()
+	for i := 0; i < b.N; i++ {
+		lg.Info("test message")
+	}
+}
+
+func BenchmarkDescendant2(b *testing.B) {
+	lg := New()
+	lg.SetHandler(DiscardHandler())
+	for i := 0; i < 2; i++ {
+		lg = lg.New()
+	}
+	for i := 0; i < b.N; i++ {
+		lg.Info("test message")
+	}
+}
+
+func BenchmarkDescendant4(b *testing.B) {
+	lg := New()
+	lg.SetHandler(DiscardHandler())
+	for i := 0; i < 4; i++ {
+		lg = lg.New()
+	}
+	for i := 0; i < b.N; i++ {
+		lg.Info("test message")
+	}
+}
+
+func BenchmarkDescendant8(b *testing.B) {
+	lg := New()
+	lg.SetHandler(DiscardHandler())
+	for i := 0; i < 8; i++ {
+		lg = lg.New()
+	}
+	for i := 0; i < b.N; i++ {
+		lg.Info("test message")
+	}
+}
