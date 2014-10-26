@@ -21,7 +21,8 @@ func init() {
 		StderrHandler = StreamHandler(os.Stderr, TerminalFormat())
 	}
 
-	root = &logger{[]interface{}{}, &swapHandler{handler: StdoutHandler}}
+	root = &logger{[]interface{}{}, new(swapHandler)}
+	root.SetHandler(StdoutHandler)
 }
 
 // New returns a new logger with the given context.
