@@ -9,6 +9,7 @@ import (
 	"net"
 	"regexp"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 )
@@ -491,5 +492,34 @@ func TestCallerStackHandler(t *testing.T) {
 
 	if s != exp {
 		t.Fatalf("Wrong context value, got %s expected string matching %s", s, exp)
+	}
+}
+
+func TestConcurrent(t *testing.T) {
+	root := New()
+	ctxLen := 34
+	l := root.New(make([]interface{}, ctxLen)...)
+	const goroutines = 8
+	var res [goroutines]int
+	l.SetHandler(SyncHandler(FuncHandler(func(r *Record) error {
+		res[r.Ctx[ctxLen+1].(int)]++
+		return nil
+	})))
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	for i := 0; i < goroutines; i++ {
+		i := i
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 10000; j++ {
+				l.Info("test message", "foo", i)
+			}
+		}()
+	}
+	wg.Wait()
+	for _, val := range res[:] {
+		if val != 10000 {
+			t.Fatalf("Wrong number of messages for context: %+v", res)
+		}
 	}
 }
