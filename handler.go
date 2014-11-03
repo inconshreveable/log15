@@ -125,7 +125,7 @@ func CallerStackHandler(format string, h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
 		s := stack.Callers().
 			TrimBelow(stack.Call(r.CallPC[0])).
-			TrimAboveName("main.main")
+			TrimRuntime()
 		if len(s) > 0 {
 			buf := &bytes.Buffer{}
 			buf.WriteByte('[')
@@ -312,7 +312,7 @@ func LazyHandler(h Handler) Handler {
 				} else {
 					if cs, ok := v.(stack.Trace); ok {
 						v = cs.TrimBelow(stack.Call(r.CallPC[0])).
-							TrimAboveName("main.main")
+							TrimRuntime()
 					}
 					r.Ctx[i] = v
 				}
