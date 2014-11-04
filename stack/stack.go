@@ -1,3 +1,5 @@
+// +build go1.3
+
 // Package stack implements utilities to capture, manipulate, and format call
 // stacks.
 package stack
