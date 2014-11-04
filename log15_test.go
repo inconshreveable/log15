@@ -495,9 +495,22 @@ func TestCallerStackHandler(t *testing.T) {
 	}
 }
 
+// tests that when logging concurrently to the same logger
+// from multiple goroutines that the calls are handled independently
+// this test tries to trigger a previous bug where concurrent calls could
+// corrupt each other's context values
+//
+// this test runs N concurrent goroutines each logging a fixed number of
+// records and a handler that buckets them based on the index passed in the context.
+// if the logger is not concurrent-safe then the values in the buckets will not all be the same
+//
+// https://github.com/inconshreveable/log15/pull/30
 func TestConcurrent(t *testing.T) {
 	root := New()
-	ctxLen := 34
+	// this was the first value that triggered
+	// go to allocate extra capacity in the logger's context slice which
+	// was necessary to trigger the bug
+	const ctxLen = 34
 	l := root.New(make([]interface{}, ctxLen)...)
 	const goroutines = 8
 	var res [goroutines]int
@@ -508,13 +521,12 @@ func TestConcurrent(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(goroutines)
 	for i := 0; i < goroutines; i++ {
-		i := i
-		go func() {
+		go func(idx int) {
 			defer wg.Done()
 			for j := 0; j < 10000; j++ {
-				l.Info("test message", "foo", i)
+				l.Info("test message", "goroutine_idx", idx)
 			}
-		}()
+		}(i)
 	}
 	wg.Wait()
 	for _, val := range res[:] {
