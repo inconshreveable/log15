@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/inconshreveable/log15/term"
+	"github.com/mattn/go-colorable"
 )
 
 var (
@@ -14,11 +15,11 @@ var (
 
 func init() {
 	if term.IsTty(os.Stdout.Fd()) {
-		StdoutHandler = StreamHandler(os.Stdout, TerminalFormat())
+		StdoutHandler = StreamHandler(colorable.NewColorableStdout(), TerminalFormat())
 	}
 
 	if term.IsTty(os.Stderr.Fd()) {
-		StderrHandler = StreamHandler(os.Stderr, TerminalFormat())
+		StderrHandler = StreamHandler(colorable.NewColorableStderr(), TerminalFormat())
 	}
 
 	root = &logger{[]interface{}{}, new(swapHandler)}
