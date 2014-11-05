@@ -1,5 +1,3 @@
-// +build go1.3
-
 // Package stack implements utilities to capture, manipulate, and format call
 // stacks.
 package stack
@@ -9,7 +7,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 )
 
 // Call records a single function invocation from a goroutine stack. It is a
@@ -151,24 +148,6 @@ func (pcs Trace) Format(s fmt.State, c rune) {
 		pc.Format(s, c)
 	}
 	s.Write([]byte("]"))
-}
-
-var pcStackPool = sync.Pool{
-	New: func() interface{} { return make([]uintptr, 1000) },
-}
-
-// Callers returns a Trace for the current goroutine with element 0
-// identifying the calling function.
-func Callers() Trace {
-	pcs := pcStackPool.Get().([]uintptr)
-	pcs = pcs[:cap(pcs)]
-	n := runtime.Callers(2, pcs)
-	cs := make([]Call, n)
-	for i, pc := range pcs[:n] {
-		cs[i] = Call(pc)
-	}
-	pcStackPool.Put(pcs)
-	return cs
 }
 
 // TrimBelow returns a slice of the Trace with all entries below pc removed.
