@@ -100,7 +100,7 @@ func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
 		Time: time.Now(),
 		Lvl:  lvl,
 		Msg:  msg,
-		Ctx:  append(l.ctx, normalize(ctx)...),
+		Ctx:  newContext(l.ctx, ctx),
 		KeyNames: RecordKeyNames{
 			Time: timeKey,
 			Msg:  msgKey,
@@ -112,9 +112,17 @@ func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
 }
 
 func (l *logger) New(ctx ...interface{}) Logger {
-	child := &logger{append(l.ctx, normalize(ctx)...), new(swapHandler)}
+	child := &logger{newContext(l.ctx, ctx), new(swapHandler)}
 	child.SetHandler(l.h)
 	return child
+}
+
+func newContext(prefix []interface{}, suffix []interface{}) []interface{} {
+	normalizedSuffix := normalize(suffix)
+	newCtx := make([]interface{}, len(prefix)+len(normalizedSuffix))
+	n := copy(newCtx, prefix)
+	copy(newCtx[n:], suffix)
+	return newCtx
 }
 
 func (l *logger) Debug(msg string, ctx ...interface{}) {
