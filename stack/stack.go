@@ -112,6 +112,20 @@ func (pc Call) Format(s fmt.State, c rune) {
 	}
 }
 
+// Callers returns a Trace for the current goroutine with element 0
+// identifying the calling function.
+func Callers() Trace {
+	pcs := poolBuf()
+	pcs = pcs[:cap(pcs)]
+	n := runtime.Callers(2, pcs)
+	cs := make([]Call, n)
+	for i, pc := range pcs[:n] {
+		cs[i] = Call(pc)
+	}
+	putPoolBuf(pcs)
+	return cs
+}
+
 // name returns the import path qualified name of the function containing the
 // call.
 func (pc Call) name() string {

@@ -2,50 +2,26 @@
 
 package stack
 
-import (
-	"runtime"
-)
-
 const (
 	stackPoolSize = 64
 )
 
-type stackPool struct {
-	c chan []uintptr
-}
+var (
+	pcStackPool = make(chan []uintptr, stackPoolSize)
+)
 
-func newStackPool() *stackPool {
-	return &stackPool{c: make(chan []uintptr, stackPoolSize)}
-}
-
-func (p *stackPool) Get() []uintptr {
+func poolBuf() []uintptr {
 	select {
-	case st := <-p.c:
-		return st
+	case p := <-pcStackPool:
+		return p
 	default:
 		return make([]uintptr, 1000)
 	}
 }
 
-func (p *stackPool) Put(st []uintptr) {
+func putPoolBuf(p []uintptr) {
 	select {
-	case p.c <- st:
+	case pcStackPool <- p:
 	default:
 	}
-}
-
-var pcStackPool = newStackPool()
-
-// Callers returns a Trace for the current goroutine with element 0
-// identifying the calling function.
-func Callers() Trace {
-	pcs := pcStackPool.Get()
-	pcs = pcs[:cap(pcs)]
-	n := runtime.Callers(2, pcs)
-	cs := make([]Call, n)
-	for i, pc := range pcs[:n] {
-		cs[i] = Call(pc)
-	}
-	pcStackPool.Put(pcs)
-	return cs
 }
