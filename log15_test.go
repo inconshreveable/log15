@@ -9,6 +9,7 @@ import (
 	"net"
 	"regexp"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 )
@@ -444,5 +445,93 @@ func TestCallerFuncHandler(t *testing.T) {
 
 	if !match {
 		t.Fatalf("Wrong context value, got %s expected string matching %s", s, regex)
+	}
+}
+
+// https://github.com/inconshreveable/log15/issues/27
+func TestCallerStackHandler(t *testing.T) {
+	t.Parallel()
+
+	l := New()
+	h, r := testHandler()
+	l.SetHandler(CallerStackHandler("%#v", h))
+
+	lines := []int{}
+
+	func() {
+		l.Info("baz")
+		_, _, line, _ := runtime.Caller(0)
+		lines = append(lines, line-1)
+	}()
+	_, file, line, _ := runtime.Caller(0)
+	lines = append(lines, line-1)
+
+	if len(r.Ctx) != 2 {
+		t.Fatalf("Expected stack in record context. Got length %d, expected %d", len(r.Ctx), 2)
+	}
+
+	const key = "stack"
+
+	if r.Ctx[0] != key {
+		t.Fatalf("Wrong context key, got %s expected %s", r.Ctx[0], key)
+	}
+
+	s, ok := r.Ctx[1].(string)
+	if !ok {
+		t.Fatalf("Wrong context value type, got %T expected string", r.Ctx[1])
+	}
+
+	exp := "["
+	for i, line := range lines {
+		if i > 0 {
+			exp += " "
+		}
+		exp += fmt.Sprint(file, ":", line)
+	}
+	exp += "]"
+
+	if s != exp {
+		t.Fatalf("Wrong context value, got %s expected string matching %s", s, exp)
+	}
+}
+
+// tests that when logging concurrently to the same logger
+// from multiple goroutines that the calls are handled independently
+// this test tries to trigger a previous bug where concurrent calls could
+// corrupt each other's context values
+//
+// this test runs N concurrent goroutines each logging a fixed number of
+// records and a handler that buckets them based on the index passed in the context.
+// if the logger is not concurrent-safe then the values in the buckets will not all be the same
+//
+// https://github.com/inconshreveable/log15/pull/30
+func TestConcurrent(t *testing.T) {
+	root := New()
+	// this was the first value that triggered
+	// go to allocate extra capacity in the logger's context slice which
+	// was necessary to trigger the bug
+	const ctxLen = 34
+	l := root.New(make([]interface{}, ctxLen)...)
+	const goroutines = 8
+	var res [goroutines]int
+	l.SetHandler(SyncHandler(FuncHandler(func(r *Record) error {
+		res[r.Ctx[ctxLen+1].(int)]++
+		return nil
+	})))
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+	for i := 0; i < goroutines; i++ {
+		go func(idx int) {
+			defer wg.Done()
+			for j := 0; j < 10000; j++ {
+				l.Info("test message", "goroutine_idx", idx)
+			}
+		}(i)
+	}
+	wg.Wait()
+	for _, val := range res[:] {
+		if val != 10000 {
+			t.Fatalf("Wrong number of messages for context: %+v", res)
+		}
 	}
 }

@@ -4,9 +4,9 @@ package stack
 
 import (
 	"fmt"
+	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 )
 
 // Call records a single function invocation from a goroutine stack. It is a
@@ -112,6 +112,20 @@ func (pc Call) Format(s fmt.State, c rune) {
 	}
 }
 
+// Callers returns a Trace for the current goroutine with element 0
+// identifying the calling function.
+func Callers() Trace {
+	pcs := poolBuf()
+	pcs = pcs[:cap(pcs)]
+	n := runtime.Callers(2, pcs)
+	cs := make([]Call, n)
+	for i, pc := range pcs[:n] {
+		cs[i] = Call(pc)
+	}
+	putPoolBuf(pcs)
+	return cs
+}
+
 // name returns the import path qualified name of the function containing the
 // call.
 func (pc Call) name() string {
@@ -121,6 +135,16 @@ func (pc Call) name() string {
 		return "???"
 	}
 	return fn.Name()
+}
+
+func (pc Call) file() string {
+	pcFix := uintptr(pc) - 1 // work around for go issue #7690
+	fn := runtime.FuncForPC(pcFix)
+	if fn == nil {
+		return "???"
+	}
+	file, _ := fn.FileLine(pcFix)
+	return file
 }
 
 // Trace records a sequence of function invocations from a goroutine stack.
@@ -138,24 +162,6 @@ func (pcs Trace) Format(s fmt.State, c rune) {
 		pc.Format(s, c)
 	}
 	s.Write([]byte("]"))
-}
-
-var pcStackPool = sync.Pool{
-	New: func() interface{} { return make([]uintptr, 1000) },
-}
-
-// Callers returns a Trace for the current goroutine with element 0
-// identifying the calling function.
-func Callers() Trace {
-	pcs := pcStackPool.Get().([]uintptr)
-	pcs = pcs[:cap(pcs)]
-	n := runtime.Callers(2, pcs)
-	cs := make([]Call, n)
-	for i, pc := range pcs[:n] {
-		cs[i] = Call(pc)
-	}
-	pcStackPool.Put(pcs)
-	return cs
 }
 
 // TrimBelow returns a slice of the Trace with all entries below pc removed.
@@ -187,6 +193,32 @@ func (pcs Trace) TrimBelowName(name string) Trace {
 // highest with function name name removed.
 func (pcs Trace) TrimAboveName(name string) Trace {
 	for len(pcs) > 0 && pcs[len(pcs)-1].name() != name {
+		pcs = pcs[:len(pcs)-1]
+	}
+	return pcs
+}
+
+var goroot string
+
+func init() {
+	goroot = filepath.ToSlash(runtime.GOROOT())
+	if runtime.GOOS == "windows" {
+		goroot = strings.ToLower(goroot)
+	}
+}
+
+func inGoroot(path string) bool {
+	if runtime.GOOS == "windows" {
+		path = strings.ToLower(path)
+	}
+	return strings.HasPrefix(path, goroot)
+}
+
+// TrimRuntime returns a slice of the Trace with the topmost entries from the
+// go runtime removed. It considers any calls originating from files under
+// GOROOT as part of the runtime.
+func (pcs Trace) TrimRuntime() Trace {
+	for len(pcs) > 0 && inGoroot(pcs[len(pcs)-1].file()) {
 		pcs = pcs[:len(pcs)-1]
 	}
 	return pcs

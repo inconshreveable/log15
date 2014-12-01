@@ -8,6 +8,8 @@ import (
 	"os"
 	"reflect"
 	"sync"
+	"sync/atomic"
+	"unsafe"
 
 	"gopkg.in/inconshreveable/log15.v2/stack"
 )
@@ -123,7 +125,7 @@ func CallerStackHandler(format string, h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
 		s := stack.Callers().
 			TrimBelow(stack.Call(r.CallPC[0])).
-			TrimAboveName("main.main")
+			TrimRuntime()
 		if len(s) > 0 {
 			buf := &bytes.Buffer{}
 			buf.WriteByte('[')
@@ -277,24 +279,18 @@ func BufferedHandler(bufSize int, h Handler) Handler {
 	return ChannelHandler(recs)
 }
 
-// swapHandler wraps another handler that may swapped out
+// swapHandler wraps another handler that may be swapped out
 // dynamically at runtime in a thread-safe fashion.
 type swapHandler struct {
-	mu      sync.RWMutex
-	handler Handler
+	handler unsafe.Pointer
 }
 
 func (h *swapHandler) Log(r *Record) error {
-	defer h.mu.RUnlock()
-	h.mu.RLock()
-	err := h.handler.Log(r)
-	return err
+	return (*(*Handler)(atomic.LoadPointer(&h.handler))).Log(r)
 }
 
 func (h *swapHandler) Swap(newHandler Handler) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.handler = newHandler
+	atomic.StorePointer(&h.handler, unsafe.Pointer(&newHandler))
 }
 
 // LazyHandler writes all values to the wrapped handler after evaluating
@@ -316,7 +312,7 @@ func LazyHandler(h Handler) Handler {
 				} else {
 					if cs, ok := v.(stack.Trace); ok {
 						v = cs.TrimBelow(stack.Call(r.CallPC[0])).
-							TrimAboveName("main.main")
+							TrimRuntime()
 					}
 					r.Ctx[i] = v
 				}

@@ -1,8 +1,11 @@
 package ext
 
 import (
-	log "gopkg.in/inconshreveable/log15.v2"
 	"sync"
+	"sync/atomic"
+	"unsafe"
+
+	log "gopkg.in/inconshreveable/log15.v2"
 )
 
 // EscalateErrHandler wraps another handler and passes all records through
@@ -95,23 +98,19 @@ func (h *Speculative) Flush() {
 // used to implement the SetHandler method for the default
 // implementation of Logger.
 func HotSwapHandler(h log.Handler) *HotSwap {
-	return &HotSwap{handler: h}
+	hs := new(HotSwap)
+	hs.Swap(h)
+	return hs
 }
 
 type HotSwap struct {
-	mu      sync.RWMutex
-	handler log.Handler
+	handler unsafe.Pointer
 }
 
 func (h *HotSwap) Log(r *log.Record) error {
-	defer h.mu.RUnlock()
-	h.mu.RLock()
-	err := h.handler.Log(r)
-	return err
+	return (*(*log.Handler)(atomic.LoadPointer(&h.handler))).Log(r)
 }
 
 func (h *HotSwap) Swap(newHandler log.Handler) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.handler = newHandler
+	atomic.StorePointer(&h.handler, unsafe.Pointer(&newHandler))
 }

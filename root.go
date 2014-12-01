@@ -3,6 +3,7 @@ package log15
 import (
 	"os"
 
+	"github.com/mattn/go-colorable"
 	"gopkg.in/inconshreveable/log15.v2/term"
 )
 
@@ -14,14 +15,15 @@ var (
 
 func init() {
 	if term.IsTty(os.Stdout.Fd()) {
-		StdoutHandler = StreamHandler(os.Stdout, TerminalFormat())
+		StdoutHandler = StreamHandler(colorable.NewColorableStdout(), TerminalFormat())
 	}
 
 	if term.IsTty(os.Stderr.Fd()) {
-		StderrHandler = StreamHandler(os.Stderr, TerminalFormat())
+		StderrHandler = StreamHandler(colorable.NewColorableStderr(), TerminalFormat())
 	}
 
-	root = &logger{[]interface{}{}, &swapHandler{handler: StdoutHandler}}
+	root = &logger{[]interface{}{}, new(swapHandler)}
+	root.SetHandler(StdoutHandler)
 }
 
 // New returns a new logger with the given context.
