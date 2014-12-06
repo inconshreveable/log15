@@ -189,6 +189,25 @@ func TestLogContext(t *testing.T) {
 	}
 }
 
+func TestMapCtx(t *testing.T) {
+	t.Parallel()
+
+	l, _, r := testLogger()
+	l.Crit("test", Ctx{"foo": "bar"})
+
+	if len(r.Ctx) != 2 {
+		t.Fatalf("Wrong context length, got %d, expected %d", len(r.Ctx), 2)
+	}
+
+	if r.Ctx[0] != "foo" {
+		t.Fatalf("Wrong context key, got %s expected %s", r.Ctx[0], "foo")
+	}
+
+	if r.Ctx[1] != "bar" {
+		t.Fatalf("Wrong context value, got %s expected %s", r.Ctx[1], "bar")
+	}
+}
+
 func TestLvlFilterHandler(t *testing.T) {
 	t.Parallel()
 

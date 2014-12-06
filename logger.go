@@ -121,7 +121,7 @@ func newContext(prefix []interface{}, suffix []interface{}) []interface{} {
 	normalizedSuffix := normalize(suffix)
 	newCtx := make([]interface{}, len(prefix)+len(normalizedSuffix))
 	n := copy(newCtx, prefix)
-	copy(newCtx[n:], suffix)
+	copy(newCtx[n:], normalizedSuffix)
 	return newCtx
 }
 
