@@ -2,7 +2,7 @@
 
 # log15 [![godoc reference](https://godoc.org/gopkg.in/inconshreveable/log15.v2?status.png)](https://godoc.org/gopkg.in/inconshreveable/log15.v2)
 
-Package log15 provides an opinionated, simple toolkit for best-practice logging that is both human and machine readable. It is modeled after the standard library's io and net/http packages.
+Package log15 provides an opinionated, simple toolkit for best-practice logging in Go (golang) that is both human and machine readable. It is modeled after the Go standard library's [`io`](http://golang.org/pkg/io/) and [`net/http`](http://golang.org/pkg/net/http/) packages and is an alternative to the standard library's [`log`](http://golang.org/pkg/log/) package. 
 
 ## Features
 - A simple, easy-to-understand API
@@ -18,7 +18,9 @@ Package log15 provides an opinionated, simple toolkit for best-practice logging 
 The API of the master branch of log15 should always be considered unstable. Using a stable version
 of the log15 package is supported by gopkg.in. Include your dependency like so:
 
-    import log "gopkg.in/inconshreveable/log15.v2"
+```go
+import log "gopkg.in/inconshreveable/log15.v2"
+```
 
 ## Examples
 
@@ -46,8 +48,8 @@ srvlog.SetHandler(log.MultiHandler(
 
 ## FAQ
 
-### The varargs style is brittle and error prone! Can I have type saftey please?
-Yes. Use log.Ctx:
+### The varargs style is brittle and error prone! Can I have type safety please?
+Yes. Use `log.Ctx`:
 
 ```go
 srvlog := log.New(log.Ctx{"module": "app/server"})
