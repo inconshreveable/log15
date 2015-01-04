@@ -3,12 +3,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build !appengine
+// +build appengine
 
 package term
 
-import "syscall"
-
-const ioctlReadTermios = syscall.TCGETS
-
-type Termios syscall.Termios
+// IsTty always returns false on AppEngine.
+func IsTty(fd uintptr) bool {
+	return false
+}
