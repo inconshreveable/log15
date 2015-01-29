@@ -8,8 +8,6 @@ import (
 	"os"
 	"reflect"
 	"sync"
-	"sync/atomic"
-	"unsafe"
 
 	"github.com/inconshreveable/log15/stack"
 )
@@ -277,20 +275,6 @@ func BufferedHandler(bufSize int, h Handler) Handler {
 		}
 	}()
 	return ChannelHandler(recs)
-}
-
-// swapHandler wraps another handler that may be swapped out
-// dynamically at runtime in a thread-safe fashion.
-type swapHandler struct {
-	handler unsafe.Pointer
-}
-
-func (h *swapHandler) Log(r *Record) error {
-	return (*(*Handler)(atomic.LoadPointer(&h.handler))).Log(r)
-}
-
-func (h *swapHandler) Swap(newHandler Handler) {
-	atomic.StorePointer(&h.handler, unsafe.Pointer(&newHandler))
 }
 
 // LazyHandler writes all values to the wrapped handler after evaluating
