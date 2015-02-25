@@ -114,15 +114,25 @@ func TestJson(t *testing.T) {
 	validate("y", 3.2)
 }
 
+type testtype struct {
+	name string
+}
+
+func (tt testtype) String() string {
+	return tt.name
+}
+
 func TestLogfmt(t *testing.T) {
 	t.Parallel()
 
+	var nilVal *testtype
+
 	l, buf := testFormatter(LogfmtFormat())
-	l.Error("some message", "x", 1, "y", 3.2, "equals", "=", "quote", "\"")
+	l.Error("some message", "x", 1, "y", 3.2, "equals", "=", "quote", "\"", "nil", nilVal)
 
 	// skip timestamp in comparison
 	got := buf.Bytes()[27:buf.Len()]
-	expected := []byte(`lvl=eror msg="some message" x=1 y=3.200 equals="=" quote="\""` + "\n")
+	expected := []byte(`lvl=eror msg="some message" x=1 y=3.200 equals="=" quote="\"" nil=nil` + "\n")
 	if !bytes.Equal(got, expected) {
 		t.Fatalf("Got %s, expected %s", got, expected)
 	}
