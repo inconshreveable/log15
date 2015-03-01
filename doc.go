@@ -90,6 +90,21 @@ or above in JSON formatted output to the file /var/log/service.json
         log.MatchFilterHandler("pkg", "app/rpc" log.StdoutHandler())
     )
 
+Logging File Names and Line Numbers
+
+This package implements three Handlers that add debugging information to the
+context, CallerFileHandler, CallerFuncHandler and CallerStackHandler. Here's
+an example that adds the source file and line number of each logging call to
+the context.
+
+    handler := log.CallerFileHandler(log.StdoutHandler())
+
+    log.Error("open file", "err", err)
+
+This will output a line that looks like:
+
+     lvl=info t=2014-05-02T16:07:23-0700 msg="open file" err="file not found" caller=data.go:42
+
 Custom Handlers
 
 The Handler interface is so simple that it's also trivial to write your own. Let's create an
