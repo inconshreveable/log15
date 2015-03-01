@@ -11,7 +11,7 @@ JSON instead if that suits you. Here's how you log:
 
 This will output a line that looks like:
 
-     lvl=info t=2014-05-02T16:07:23-0700 msg="page access" path=/org/71/profile user_id=9
+     lvl=info t=2014-05-02T16:07:23-0700 msg="page accessed" path=/org/71/profile user_id=9
 
 Getting Started
 
@@ -75,7 +75,7 @@ single interface that is inspired by net/http's handler interface:
 
 Handlers can filter records, format them, or dispatch to multiple other Handlers.
 This package implements a number of Handlers for common logging patterns that are
-can be easily composed to create flexible, custom logging structures.
+easily composed to create flexible, custom logging structures.
 
 Here's an example handler that prints logfmt output to Stdout:
 
