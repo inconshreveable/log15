@@ -97,13 +97,29 @@ context, CallerFileHandler, CallerFuncHandler and CallerStackHandler. Here's
 an example that adds the source file and line number of each logging call to
 the context.
 
-    handler := log.CallerFileHandler(log.StdoutHandler())
-
+    h := log.CallerFileHandler(log.StdoutHandler())
+    log.Root().SetHandler(h)
+    ...
     log.Error("open file", "err", err)
 
 This will output a line that looks like:
 
-     lvl=info t=2014-05-02T16:07:23-0700 msg="open file" err="file not found" caller=data.go:42
+    lvl=eror t=2014-05-02T16:07:23-0700 msg="open file" err="file not found" caller=data.go:42
+
+Here's an example that logs the call stack rather than just the call site.
+
+    h := log.CallerStackHandler("%+v", log.StdoutHandler())
+    log.Root().SetHandler(h)
+    ...
+    log.Error("open file", "err", err)
+
+This will output a line that looks like:
+
+    lvl=eror t=2014-05-02T16:07:23-0700 msg="open file" err="file not found" stack="[pkg/data.go:42 pkg/cmd/main.go]"
+
+The "%+v" format instructs the handler to include the path of the source file
+relative to the compile time GOPATH. The log15/stack package documents the
+full list of formatting verbs and modifiers available.
 
 Custom Handlers
 
