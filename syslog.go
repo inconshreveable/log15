@@ -30,7 +30,7 @@ func SyslogNetHandler(net, addr string, tag string, fmtr Format) (Handler, error
 
 // SyslogHandler opens a connection to a log daemon over the network and writes
 // all log records to it. Supports the priority concept.
-func SyslogNetHandlerPriority(net, addr string, tag string, p syslog.Priority, fmtr Format) (Handler, error) {
+func SyslogNetHandlerPriority(net, addr string, p syslog.Priority, tag string, fmtr Format) (Handler, error) {
 	wr, err := syslog.Dial(net, addr, p, tag)
 	return sharedSyslog(fmtr, wr, err)
 }
