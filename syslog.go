@@ -14,10 +14,24 @@ func SyslogHandler(tag string, fmtr Format) (Handler, error) {
 	return sharedSyslog(fmtr, wr, err)
 }
 
+// SyslogHandlerPriority opens a connection to the system syslog daemon by calling
+// syslog.New and writes all records to it. Supports the priority concept.
+func SyslogHandlerPriority(p syslog.Priority, tag string, fmtr Format) (Handler, error) {
+	wr, err := syslog.New(p, tag)
+	return sharedSyslog(fmtr, wr, err)
+}
+
 // SyslogHandler opens a connection to a log daemon over the network and writes
 // all log records to it.
 func SyslogNetHandler(net, addr string, tag string, fmtr Format) (Handler, error) {
 	wr, err := syslog.Dial(net, addr, syslog.LOG_INFO, tag)
+	return sharedSyslog(fmtr, wr, err)
+}
+
+// SyslogHandler opens a connection to a log daemon over the network and writes
+// all log records to it. Supports the priority concept.
+func SyslogNetHandlerPriority(net, addr string, tag string, p syslog.Priority, fmtr Format) (Handler, error) {
+	wr, err := syslog.Dial(net, addr, p, tag)
 	return sharedSyslog(fmtr, wr, err)
 }
 
