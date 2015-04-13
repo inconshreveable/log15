@@ -67,3 +67,11 @@ func (m muster) SyslogHandler(tag string, fmtr Format) Handler {
 func (m muster) SyslogNetHandler(net, addr string, tag string, fmtr Format) Handler {
 	return must(SyslogNetHandler(net, addr, tag, fmtr))
 }
+
+func (m muster) SyslogHandlerPriority(p syslog.Priority, tag string, fmtr Format) Handler {
+	return must(SyslogHandlerPriority(p, tag, fmtr))
+}
+
+func (m muster) SyslogNetHandlerPriority(net, addr string, p syslog.Priority, tag string, fmtr Format) Handler {
+	return must(SyslogNetHandlerPriority(net, addr, p, tag, fmtr))
+}
