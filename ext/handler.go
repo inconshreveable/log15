@@ -1,6 +1,7 @@
 package ext
 
 import (
+	"os"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -113,4 +114,17 @@ func (h *HotSwap) Log(r *log.Record) error {
 
 func (h *HotSwap) Swap(newHandler log.Handler) {
 	atomic.StorePointer(&h.handler, unsafe.Pointer(&newHandler))
+}
+
+// FatalHandler makes critical errors exit the program
+// immediately, much like the log.Fatal* methods from the
+// standard log package
+func FatalHandler(h log.Handler) log.Handler {
+	return log.FuncHandler(func(r *log.Record) error {
+		err := h.Log(r)
+		if r.Lvl == log.LvlCrit {
+			os.Exit(1)
+		}
+		return err
+	})
 }
