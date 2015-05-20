@@ -11,10 +11,11 @@ import (
 )
 
 const (
-	timeFormat     = "2006-01-02T15:04:05-0700"
-	termTimeFormat = "01-02|15:04:05"
-	floatFormat    = 'f'
-	termMsgJust    = 40
+	defaultTimeFormat     = "2006-01-02T15:04:05-0700"
+	defaultFloatFormat    = 'f'
+	defaultFloatPrecision = 3
+	termTimeFormat        = "01-02|15:04:05"
+	termMsgJust           = 40
 )
 
 type Format interface {
@@ -73,35 +74,86 @@ func TerminalFormat() Format {
 		}
 
 		// print the keys logfmt style
-		logfmt(b, r.Ctx, color)
+		logfmt(b, r.Ctx, color, defaultTimeFormat, defaultFloatFormat, defaultFloatPrecision)
 		return b.Bytes()
 	})
+}
+
+type Logfmt struct {
+	timeFormat     string
+	floatFormat    byte
+	floatPrecision int
+}
+
+func (f *Logfmt) Format(r *Record) []byte {
+	common := []interface{}{r.KeyNames.Time, r.Time, r.KeyNames.Lvl, r.Lvl, r.KeyNames.Msg, r.Msg}
+	buf := &bytes.Buffer{}
+	logfmt(
+		buf,
+		append(common, r.Ctx...),
+		0,
+		f.timeFormat,
+		f.floatFormat,
+		f.floatPrecision,
+	)
+	return buf.Bytes()
 }
 
 // LogfmtFormat prints records in logfmt format, an easy machine-parseable but human-readable
 // format for key/value pairs.
 //
-// For more details see: http://godoc.org/github.com/kr/logfmt
+// For more details on logfmt see: http://godoc.org/github.com/kr/logfmt.
 //
-func LogfmtFormat() Format {
-	return FormatFunc(func(r *Record) []byte {
-		common := []interface{}{r.KeyNames.Time, r.Time, r.KeyNames.Lvl, r.Lvl, r.KeyNames.Msg, r.Msg}
-		buf := &bytes.Buffer{}
-		logfmt(buf, append(common, r.Ctx...), 0)
-		return buf.Bytes()
-	})
+// LogfmtFormat's output can be configured using functional options:
+// http://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis.
+func LogfmtFormat(options ...func(*Logfmt)) Format {
+	f := &Logfmt{
+		timeFormat:     defaultTimeFormat,
+		floatFormat:    defaultFloatFormat,
+		floatPrecision: defaultFloatPrecision,
+	}
+	for _, option := range options {
+		option(f)
+	}
+	return f
 }
 
-func logfmt(buf *bytes.Buffer, ctx []interface{}, color int) {
+// LogfmtTime creates an option to configure LogfmtFormat's time formatting.
+// Example: LogfmtFormat(LogfmtTime(time.RFC3339Nano))
+func LogfmtTime(fmt string) func(*Logfmt) {
+	return func(f *Logfmt) {
+		f.timeFormat = fmt
+	}
+}
+
+// LogfmtFloatPrecision creates an option to configure how many digits after
+// the decimal point LogfmtFormat will give floats.
+// Example: LogfmtFormat(LogfmtFloatPrecision(2))
+func LogfmtFloatPrecision(digits int) func(*Logfmt) {
+	return func(f *Logfmt) {
+		f.floatPrecision = digits
+	}
+}
+
+// LogfmtFloatFormat creates an options to configure how LogfmtFormat formats
+// floats. Valid options are what strconv.FormatFloat accepts.
+// Example: LogfmtFormat(LogfmtFloatFormat('e'))
+func LogfmtFloatFormat(c byte) func(*Logfmt) {
+	return func(f *Logfmt) {
+		f.floatFormat = c
+	}
+}
+
+func logfmt(buf *bytes.Buffer, ctx []interface{}, color int, timeFormat string, floatFormat byte, floatPrecision int) {
 	for i := 0; i < len(ctx); i += 2 {
 		if i != 0 {
 			buf.WriteByte(' ')
 		}
 
 		k, ok := ctx[i].(string)
-		v := formatLogfmtValue(ctx[i+1])
+		v := formatLogfmtValue(ctx[i+1], timeFormat, floatFormat, floatPrecision)
 		if !ok {
-			k, v = errorKey, formatLogfmtValue(k)
+			k, v = errorKey, formatLogfmtValue(k, timeFormat, floatFormat, floatPrecision)
 		}
 
 		// XXX: we should probably check that all of your key bytes aren't invalid
@@ -163,7 +215,7 @@ func JsonFormatEx(pretty, lineSeparated bool) Format {
 	})
 }
 
-func formatShared(value interface{}) (result interface{}) {
+func formatShared(value interface{}, timeFormat string) (result interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
 			if v := reflect.ValueOf(value); v.Kind() == reflect.Ptr && v.IsNil() {
@@ -190,7 +242,7 @@ func formatShared(value interface{}) (result interface{}) {
 }
 
 func formatJsonValue(value interface{}) interface{} {
-	value = formatShared(value)
+	value = formatShared(value, defaultTimeFormat)
 	switch value.(type) {
 	case int, int8, int16, int32, int64, float32, float64, uint, uint8, uint16, uint32, uint64, string:
 		return value
@@ -200,19 +252,19 @@ func formatJsonValue(value interface{}) interface{} {
 }
 
 // formatValue formats a value for serialization
-func formatLogfmtValue(value interface{}) string {
+func formatLogfmtValue(value interface{}, timeFormat string, floatFormat byte, floatPrecision int) string {
 	if value == nil {
 		return "nil"
 	}
 
-	value = formatShared(value)
+	value = formatShared(value, timeFormat)
 	switch v := value.(type) {
 	case bool:
 		return strconv.FormatBool(v)
 	case float32:
-		return strconv.FormatFloat(float64(v), floatFormat, 3, 64)
+		return strconv.FormatFloat(float64(v), floatFormat, floatPrecision, 64)
 	case float64:
-		return strconv.FormatFloat(v, floatFormat, 3, 64)
+		return strconv.FormatFloat(v, floatFormat, floatPrecision, 64)
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		return fmt.Sprintf("%d", value)
 	case string:
