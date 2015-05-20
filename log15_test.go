@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"regexp"
 	"runtime"
 	"sync"
@@ -136,6 +137,43 @@ func TestLogfmt(t *testing.T) {
 	if !bytes.Equal(got, expected) {
 		t.Fatalf("Got %s, expected %s", got, expected)
 	}
+}
+
+func TestLogfmtOptions(t *testing.T) {
+	t.Parallel()
+
+	var nilVal *testtype
+	thisTime := time.RFC822
+
+	arpaTime := LogfmtTime(thisTime)
+	twoDigitPrecision := LogfmtFloatPrecision(2)
+
+	l, buf := testFormatter(LogfmtFormat(arpaTime, twoDigitPrecision))
+	l.Error("some message", "x", 1, "y", 3.2, "equals", "=", "quote", "\"", "nil", nilVal)
+
+	got := buf.Bytes()
+	prefixLen := len(`t="`)
+	totalLen := prefixLen + len(thisTime)
+	tstr := got[prefixLen:totalLen]
+	_, err := time.Parse(thisTime, string(tstr))
+	if err != nil {
+		t.Errorf("Time did not parse as %s: '%s'. %s", thisTime, tstr, err)
+	}
+
+	expected := []byte(`lvl=eror msg="some message" x=1 y=3.20 equals="=" quote="\"" nil=nil` + "\n")
+	got = got[totalLen+2 : buf.Len()] // skip timestamp
+	if !bytes.Equal(got, expected) {
+		t.Fatalf("Got %s, expected %s", got, expected)
+	}
+}
+
+func ExampleLogfmtFormat() {
+	nanoTime := LogfmtTime(time.RFC3339Nano)
+	exponent := LogfmtFloatFormat('e')
+	twoDigitPrecision := LogfmtFloatPrecision(2)
+
+	f := LogfmtFormat(nanoTime, exponent, twoDigitPrecision)
+	Root().SetHandler(StreamHandler(os.Stdout, f))
 }
 
 func TestMultiHandler(t *testing.T) {
