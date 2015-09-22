@@ -112,6 +112,7 @@ func TestJson(t *testing.T) {
 	validate("msg", "some message")
 	validate("x", float64(1)) // all numbers are floats in JSON land
 	validate("y", 3.2)
+	validate("lvl", "eror")
 }
 
 type testtype struct {
