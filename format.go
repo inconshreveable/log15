@@ -136,7 +136,7 @@ func JsonFormatEx(pretty, lineSeparated bool) Format {
 		props := make(map[string]interface{})
 
 		props[r.KeyNames.Time] = r.Time
-		props[r.KeyNames.Lvl] = r.Lvl
+		props[r.KeyNames.Lvl] = r.Lvl.String()
 		props[r.KeyNames.Msg] = r.Msg
 
 		for i := 0; i < len(r.Ctx); i += 2 {
