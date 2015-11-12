@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/robert-zaremba/go-tty"
 )
 
 const (
@@ -46,24 +48,24 @@ func (f formatFunc) Format(r *Record) []byte {
 //
 func TerminalFormat() Format {
 	return FormatFunc(func(r *Record) []byte {
-		var color = 0
+		var color tty.ECode
 		switch r.Lvl {
 		case LvlCrit:
-			color = 35
+			color = tty.MAGENTA
 		case LvlError:
-			color = 31
+			color = tty.RED
 		case LvlWarn:
-			color = 33
+			color = tty.YELLOW
 		case LvlInfo:
-			color = 32
+			color = tty.GREEN
 		case LvlDebug:
-			color = 36
+			color = tty.CYAN
 		}
 
 		b := &bytes.Buffer{}
 		lvl := strings.ToUpper(r.Lvl.String())
 		if color > 0 {
-			fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s] %s ", color, lvl, r.Time.Format(termTimeFormat), r.Msg)
+			fmt.Fprint(b, tty.AnsiEscapeS(color, lvl), "[", r.Time.Format(termTimeFormat), "] ", r.Msg)
 		} else {
 			fmt.Fprintf(b, "[%s] [%s] %s ", lvl, r.Time.Format(termTimeFormat), r.Msg)
 		}
@@ -93,7 +95,7 @@ func LogfmtFormat() Format {
 	})
 }
 
-func logfmt(buf *bytes.Buffer, ctx []interface{}, color int) {
+func logfmt(buf *bytes.Buffer, ctx []interface{}, color tty.ECode) {
 	for i := 0; i < len(ctx); i += 2 {
 		if i != 0 {
 			buf.WriteByte(' ')
@@ -107,7 +109,7 @@ func logfmt(buf *bytes.Buffer, ctx []interface{}, color int) {
 
 		// XXX: we should probably check that all of your key bytes aren't invalid
 		if color > 0 {
-			fmt.Fprintf(buf, "\x1b[%dm%s\x1b[0m=%s", color, k, v)
+			fmt.Fprint(buf, tty.AnsiEscapeS(color, k), "=", v)
 		} else {
 			buf.WriteString(k)
 			buf.WriteByte('=')
@@ -147,7 +149,7 @@ func JsonFormatEx(pretty, lineSeparated bool) Format {
 			if !ok {
 				props[errorKey] = fmt.Sprintf("%+v is not a string key", r.Ctx[i])
 			}
-			props[k] = formatJsonValue(r.Ctx[i+1])
+			props[k] = formatJSONValue(r.Ctx[i+1])
 		}
 
 		b, err := jsonMarshal(props)
@@ -192,7 +194,8 @@ func formatShared(value interface{}) (result interface{}) {
 	}
 }
 
-func formatJsonValue(value interface{}) interface{} {
+// formatJSONValue formats value appropriate for JSON.
+func formatJSONValue(value interface{}) interface{} {
 	value = formatShared(value)
 	switch value.(type) {
 	case int, int8, int16, int32, int64, float32, float64, uint, uint8, uint16, uint32, uint64, string:
