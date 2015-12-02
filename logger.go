@@ -83,11 +83,11 @@ type Logger interface {
 	SetHandler(h Handler)
 
 	// Log a message at the given level with context key/value pairs
-	Debug(msg string, ctx ...interface{})
-	Info(msg string, ctx ...interface{})
-	Warn(msg string, ctx ...interface{})
-	Error(msg string, ctx ...interface{})
-	Crit(msg string, ctx ...interface{})
+	Debug(msg interface{}, ctx ...interface{})
+	Info(msg interface{}, ctx ...interface{})
+	Warn(msg interface{}, ctx ...interface{})
+	Error(msg interface{}, ctx ...interface{})
+	Crit(msg interface{}, ctx ...interface{})
 }
 
 type logger struct {
@@ -125,24 +125,24 @@ func newContext(prefix []interface{}, suffix []interface{}) []interface{} {
 	return newCtx
 }
 
-func (l *logger) Debug(msg string, ctx ...interface{}) {
-	l.write(msg, LvlDebug, ctx)
+func (l *logger) Debug(msg interface{}, ctx ...interface{}) {
+	l.write(fmt.Sprint(msg), LvlDebug, ctx)
 }
 
-func (l *logger) Info(msg string, ctx ...interface{}) {
-	l.write(msg, LvlInfo, ctx)
+func (l *logger) Info(msg interface{}, ctx ...interface{}) {
+	l.write(fmt.Sprint(msg), LvlInfo, ctx)
 }
 
-func (l *logger) Warn(msg string, ctx ...interface{}) {
-	l.write(msg, LvlWarn, ctx)
+func (l *logger) Warn(msg interface{}, ctx ...interface{}) {
+	l.write(fmt.Sprint(msg), LvlWarn, ctx)
 }
 
-func (l *logger) Error(msg string, ctx ...interface{}) {
-	l.write(msg, LvlError, ctx)
+func (l *logger) Error(msg interface{}, ctx ...interface{}) {
+	l.write(fmt.Sprint(msg), LvlError, ctx)
 }
 
-func (l *logger) Crit(msg string, ctx ...interface{}) {
-	l.write(msg, LvlCrit, ctx)
+func (l *logger) Crit(msg interface{}, ctx ...interface{}) {
+	l.write(fmt.Sprint(msg), LvlCrit, ctx)
 }
 
 func (l *logger) SetHandler(h Handler) {

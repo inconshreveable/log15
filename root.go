@@ -1,6 +1,7 @@
 package log15
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/inconshreveable/log15/term"
@@ -42,26 +43,26 @@ func Root() Logger {
 // runtime.Caller(2) always refers to the call site in client code.
 
 // Debug is a convenient alias for Root().Debug
-func Debug(msg string, ctx ...interface{}) {
-	root.write(msg, LvlDebug, ctx)
+func Debug(msg interface{}, ctx ...interface{}) {
+	root.write(fmt.Sprint(msg), LvlDebug, ctx)
 }
 
 // Info is a convenient alias for Root().Info
-func Info(msg string, ctx ...interface{}) {
-	root.write(msg, LvlInfo, ctx)
+func Info(msg interface{}, ctx ...interface{}) {
+	root.write(fmt.Sprint(msg), LvlInfo, ctx)
 }
 
 // Warn is a convenient alias for Root().Warn
-func Warn(msg string, ctx ...interface{}) {
-	root.write(msg, LvlWarn, ctx)
+func Warn(msg interface{}, ctx ...interface{}) {
+	root.write(fmt.Sprint(msg), LvlWarn, ctx)
 }
 
 // Error is a convenient alias for Root().Error
-func Error(msg string, ctx ...interface{}) {
-	root.write(msg, LvlError, ctx)
+func Error(msg interface{}, ctx ...interface{}) {
+	root.write(fmt.Sprint(msg), LvlError, ctx)
 }
 
 // Crit is a convenient alias for Root().Crit
-func Crit(msg string, ctx ...interface{}) {
-	root.write(msg, LvlCrit, ctx)
+func Crit(msg interface{}, ctx ...interface{}) {
+	root.write(fmt.Sprint(msg), LvlCrit, ctx)
 }
