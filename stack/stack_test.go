@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"gopkg.in/inconshreveable/log15.v2/stack"
@@ -18,6 +19,23 @@ func (tt testType) testMethod() (pc uintptr, file string, line int, ok bool) {
 	return runtime.Caller(0)
 }
 
+func relToGOPATH(t *testing.T, file string) string {
+	for _, gopathComponent := range strings.Split(os.Getenv("GOPATH"), ":") {
+		if strings.HasPrefix(file, gopathComponent) {
+			gopathSrc := filepath.Join(gopathComponent, "src")
+			relFile, err := filepath.Rel(gopathSrc, file)
+			if err != nil {
+				t.Fatalf("failed to determine path relative to GOPATH: %v", err)
+			}
+			return filepath.ToSlash(relFile)
+		}
+	}
+
+	t.Fatalf("failed to determine path relative to GOPATH")
+
+	return ""
+}
+
 func TestCallFormat(t *testing.T) {
 	t.Parallel()
 
@@ -26,22 +44,14 @@ func TestCallFormat(t *testing.T) {
 		t.Fatal("runtime.Caller(0) failed")
 	}
 
-	gopathSrc := filepath.Join(os.Getenv("GOPATH"), "src")
-	relFile, err := filepath.Rel(gopathSrc, file)
-	if err != nil {
-		t.Fatalf("failed to determine path relative to GOPATH: %v", err)
-	}
-	relFile = filepath.ToSlash(relFile)
+	relFile := relToGOPATH(t, file)
 
 	pc2, file2, line2, ok2 := testType{}.testMethod()
 	if !ok2 {
 		t.Fatal("runtime.Caller(0) failed")
 	}
-	relFile2, err := filepath.Rel(gopathSrc, file)
-	if err != nil {
-		t.Fatalf("failed to determine path relative to GOPATH: %v", err)
-	}
-	relFile2 = filepath.ToSlash(relFile2)
+
+	relFile2 := relToGOPATH(t, file2)
 
 	data := []struct {
 		pc   uintptr
