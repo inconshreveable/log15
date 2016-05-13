@@ -1,6 +1,6 @@
 ![obligatory xkcd](http://imgs.xkcd.com/comics/standards.png)
 
-# log15 [![godoc reference](https://godoc.org/gopkg.in/inconshreveable/log15.v2?status.png)](https://godoc.org/gopkg.in/inconshreveable/log15.v2)
+# log15 [![godoc reference](https://godoc.org/github.com/inconshreveable/log15?status.png)](https://godoc.org/github.com/inconshreveable/log15)
 
 Package log15 provides an opinionated, simple toolkit for best-practice logging in Go (golang) that is both human and machine readable. It is modeled after the Go standard library's [`io`](http://golang.org/pkg/io/) and [`net/http`](http://golang.org/pkg/net/http/) packages and is an alternative to the standard library's [`log`](http://golang.org/pkg/log/) package. 
 
@@ -15,11 +15,13 @@ Package log15 provides an opinionated, simple toolkit for best-practice logging 
 - Support for forking records to multiple handlers, buffering records for output, failing over from failed handler writes, + more
 
 ## Versioning
-The API of the master branch of log15 should always be considered unstable. Using a stable version
-of the log15 package is supported by gopkg.in. Include your dependency like so:
+The API of the master branch of log15 should always be considered unstable. If you want to rely on a stable API,
+you must vendor the library.
+
+## Importing
 
 ```go
-import log "gopkg.in/inconshreveable/log15.v2"
+import log "github.com/inconshreveable/log15"
 ```
 
 ## Examples
@@ -45,6 +47,14 @@ srvlog.SetHandler(log.MultiHandler(
         log.LvlError,
         log.Must.FileHandler("errors.json", log.JsonFormat())))
 ```
+
+## Breaking API Changes
+The API of the master branch of log15 should always be considered unstable. If you want to rely on a stable API,
+you must vendor the library.
+
+- 57a084d014d4150152b19e4e531399a7145d1540 - Added a `Get()` method to the `Logger` interface to retrieve the current handler
+- 93404652ee366648fa622b64d1e2b67d75a3094a - `Record` field `Call` changed to `stack.Call` with switch to `github.com/go-stack/stack`
+- a5e7613673c73281f58e15a87d2cf0cf111e8152 - Restored `syslog.Priority` argument to the `SyslogXxx` handler constructors
 
 ## FAQ
 
