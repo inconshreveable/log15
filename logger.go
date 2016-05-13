@@ -2,8 +2,9 @@ package log15
 
 import (
 	"fmt"
-	"runtime"
 	"time"
+
+	"github.com/go-stack/stack"
 )
 
 const timeKey = "t"
@@ -64,7 +65,7 @@ type Record struct {
 	Lvl      Lvl
 	Msg      string
 	Ctx      []interface{}
-	CallPC   [1]uintptr
+	Call     stack.Call
 	KeyNames RecordKeyNames
 }
 
@@ -99,19 +100,18 @@ type logger struct {
 }
 
 func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
-	r := Record{
+	l.h.Log(&Record{
 		Time: time.Now(),
 		Lvl:  lvl,
 		Msg:  msg,
 		Ctx:  newContext(l.ctx, ctx),
+		Call: stack.Caller(2),
 		KeyNames: RecordKeyNames{
 			Time: timeKey,
 			Msg:  msgKey,
 			Lvl:  lvlKey,
 		},
-	}
-	runtime.Callers(3, r.CallPC[:])
-	l.h.Log(&r)
+	})
 }
 
 func (l *logger) New(ctx ...interface{}) Logger {
