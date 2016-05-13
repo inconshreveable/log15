@@ -118,8 +118,8 @@ This will output a line that looks like:
     lvl=eror t=2014-05-02T16:07:23-0700 msg="open file" err="file not found" stack="[pkg/data.go:42 pkg/cmd/main.go]"
 
 The "%+v" format instructs the handler to include the path of the source file
-relative to the compile time GOPATH. The log15/stack package documents the
-full list of formatting verbs and modifiers available.
+relative to the compile time GOPATH. The github.com/go-stack/stack package
+documents the full list of formatting verbs and modifiers available.
 
 Custom Handlers
 

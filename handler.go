@@ -1,7 +1,6 @@
 package log15
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"net"
@@ -9,7 +8,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/inconshreveable/log15/stack"
+	"github.com/go-stack/stack"
 )
 
 // A Logger prints its log records by writing to a Handler.
@@ -98,8 +97,7 @@ func (h *closingHandler) Close() error {
 // the calling function to the context with key "caller".
 func CallerFileHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
-		call := stack.Call(r.CallPC[0])
-		r.Ctx = append(r.Ctx, "caller", fmt.Sprint(call))
+		r.Ctx = append(r.Ctx, "caller", fmt.Sprint(r.Call))
 		return h.Log(r)
 	})
 }
@@ -108,8 +106,7 @@ func CallerFileHandler(h Handler) Handler {
 // the context with key "fn".
 func CallerFuncHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
-		call := stack.Call(r.CallPC[0])
-		r.Ctx = append(r.Ctx, "fn", fmt.Sprintf("%+n", call))
+		r.Ctx = append(r.Ctx, "fn", fmt.Sprintf("%+n", r.Call))
 		return h.Log(r)
 	})
 }
@@ -118,23 +115,12 @@ func CallerFuncHandler(h Handler) Handler {
 // with key "stack". The stack trace is formated as a space separated list of
 // call sites inside matching []'s. The most recent call site is listed first.
 // Each call site is formatted according to format. See the documentation of
-// log15/stack.Call.Format for the list of supported formats.
+// package github.com/go-stack/stack for the list of supported formats.
 func CallerStackHandler(format string, h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
-		s := stack.Callers().
-			TrimBelow(stack.Call(r.CallPC[0])).
-			TrimRuntime()
+		s := stack.Trace().TrimBelow(r.Call).TrimRuntime()
 		if len(s) > 0 {
-			buf := &bytes.Buffer{}
-			buf.WriteByte('[')
-			for i, pc := range s {
-				if i > 0 {
-					buf.WriteByte(' ')
-				}
-				fmt.Fprintf(buf, format, pc)
-			}
-			buf.WriteByte(']')
-			r.Ctx = append(r.Ctx, "stack", buf.String())
+			r.Ctx = append(r.Ctx, "stack", fmt.Sprintf(format, s))
 		}
 		return h.Log(r)
 	})
@@ -294,9 +280,8 @@ func LazyHandler(h Handler) Handler {
 					hadErr = true
 					r.Ctx[i] = err
 				} else {
-					if cs, ok := v.(stack.Trace); ok {
-						v = cs.TrimBelow(stack.Call(r.CallPC[0])).
-							TrimRuntime()
+					if cs, ok := v.(stack.CallStack); ok {
+						v = cs.TrimBelow(r.Call).TrimRuntime()
 					}
 					r.Ctx[i] = v
 				}
