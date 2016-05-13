@@ -49,8 +49,8 @@ srvlog.SetHandler(log.MultiHandler(
 ```
 
 ## Breaking API Changes
-The API of the master branch of log15 should always be considered unstable. If you want to rely on a stable API,
-you must vendor the library.
+The following commits broke API stability. This reference is intended to help you understand the consequences of updating to a newer version
+of log15.
 
 - 57a084d014d4150152b19e4e531399a7145d1540 - Added a `Get()` method to the `Logger` interface to retrieve the current handler
 - 93404652ee366648fa622b64d1e2b67d75a3094a - `Record` field `Call` changed to `stack.Call` with switch to `github.com/go-stack/stack`
