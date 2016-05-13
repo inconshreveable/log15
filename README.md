@@ -36,7 +36,7 @@ connlog := srvlog.New("raddr", c.RemoteAddr())
 connlog.Info("connection open")
 
 // lazy evaluation
-connlog.Debug("ping remote", "latency", log.Lazy(pingRemote))
+connlog.Debug("ping remote", "latency", log.Lazy{pingRemote})
 
 // flexible configuration
 srvlog.SetHandler(log.MultiHandler(

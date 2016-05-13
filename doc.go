@@ -69,7 +69,7 @@ The Handler interface defines where log lines are printed to and how they are fo
 single interface that is inspired by net/http's handler interface:
 
     type Handler interface {
-        Log(r *Record)
+        Log(r *Record) error
     }
 
 
