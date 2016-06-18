@@ -48,6 +48,13 @@ srvlog.SetHandler(log.MultiHandler(
         log.Must.FileHandler("errors.json", log.JsonFormat()))))
 ```
 
+Will result in output that looks like this:
+
+```
+WARN[06-17|21:58:10] abnormal conn rate                       module=app/server rate=0.500 low=0.100 high=0.800
+INFO[06-17|21:58:10] connection open                          module=app/server raddr=10.0.0.1
+```
+
 ## Breaking API Changes
 The following commits broke API stability. This reference is intended to help you understand the consequences of updating to a newer version
 of log15.
