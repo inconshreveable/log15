@@ -236,14 +236,11 @@ func escapeString(s string) string {
 			e.WriteByte('\\')
 			e.WriteByte(byte(r))
 		case '\n':
-			e.WriteByte('\\')
-			e.WriteByte('n')
+			e.WriteString("\\n")
 		case '\r':
-			e.WriteByte('\\')
-			e.WriteByte('r')
+			e.WriteString("\\r")
 		case '\t':
-			e.WriteByte('\\')
-			e.WriteByte('t')
+			e.WriteString("\\t")
 		default:
 			e.WriteRune(r)
 		}
