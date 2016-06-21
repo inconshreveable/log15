@@ -108,7 +108,9 @@ func logfmt(buf *bytes.Buffer, ctx []interface{}, color int) {
 		if color > 0 {
 			fmt.Fprintf(buf, "\x1b[%dm%s\x1b[0m=%s", color, k, v)
 		} else {
-			fmt.Fprintf(buf, "%s=%s", k, v)
+			buf.WriteString(k)
+			buf.WriteByte('=')
+			buf.WriteString(v)
 		}
 	}
 
