@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -224,6 +225,10 @@ func formatLogfmtValue(value interface{}) string {
 	}
 }
 
+var stringBufPool = sync.Pool{
+	New: func() interface{} { return new(bytes.Buffer) },
+}
+
 func escapeString(s string) string {
 	needsQuotes := false
 	needsEscape := false
@@ -238,7 +243,7 @@ func escapeString(s string) string {
 	if needsEscape == false && needsQuotes == false {
 		return s
 	}
-	e := bytes.Buffer{}
+	e := stringBufPool.Get().(*bytes.Buffer)
 	e.WriteByte('"')
 	for _, r := range s {
 		switch r {
@@ -259,9 +264,13 @@ func escapeString(s string) string {
 		}
 	}
 	e.WriteByte('"')
-	start, stop := 0, e.Len()
-	if !needsQuotes {
-		start, stop = 1, stop-1
+	var ret string
+	if needsQuotes {
+		ret = e.String()
+	} else {
+		ret = string(e.Bytes()[1 : e.Len()-1])
 	}
-	return string(e.Bytes()[start:stop])
+	e.Reset()
+	stringBufPool.Put(e)
+	return ret
 }
