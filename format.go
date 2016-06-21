@@ -223,14 +223,22 @@ func formatLogfmtValue(value interface{}) string {
 }
 
 func escapeString(s string) string {
-	needQuotes := false
+	needsQuotes := false
+	needsEscape := false
+	for _, r := range s {
+		if r <= ' ' || r == '=' || r == '"' {
+			needsQuotes = true
+		}
+		if r == '\\' || r == '"' || r == '\n' || r == '\r' || r == '\t' {
+			needsEscape = true
+		}
+	}
+	if needsEscape == false && needsQuotes == false {
+		return s
+	}
 	e := bytes.Buffer{}
 	e.WriteByte('"')
 	for _, r := range s {
-		if r <= ' ' || r == '=' || r == '"' {
-			needQuotes = true
-		}
-
 		switch r {
 		case '\\', '"':
 			e.WriteByte('\\')
@@ -250,7 +258,7 @@ func escapeString(s string) string {
 	}
 	e.WriteByte('"')
 	start, stop := 0, e.Len()
-	if !needQuotes {
+	if !needsQuotes {
 		start, stop = 1, stop-1
 	}
 	return string(e.Bytes()[start:stop])
