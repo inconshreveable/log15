@@ -254,14 +254,13 @@ func TestNetHandler(t *testing.T) {
 	go func() {
 		c, err := l.Accept()
 		if err != nil {
-			t.Errorf("Failed to accept conneciton: %v", err)
-			return
+			t.Fatalf("Failed to accept connection: %v", err)
 		}
 
 		rd := bufio.NewReader(c)
 		s, err := rd.ReadString('\n')
 		if err != nil {
-			t.Errorf("Failed to read string: %v", err)
+			t.Fatalf("Failed to read string: %v", err)
 		}
 
 		got := s[27:]
