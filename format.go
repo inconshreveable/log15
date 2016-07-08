@@ -208,6 +208,12 @@ func formatLogfmtValue(value interface{}) string {
 		return "nil"
 	}
 
+	if t, ok := value.(time.Time); ok {
+		// Performance optimization: No need for escaping since the provided
+		// timeFormat doesn't have any escape characters, and escaping is
+		// expensive.
+		return t.Format(timeFormat)
+	}
 	value = formatShared(value)
 	switch v := value.(type) {
 	case bool:
