@@ -16,7 +16,26 @@ const (
 	termTimeFormat = "01-02|15:04:05"
 	floatFormat    = 'f'
 	termMsgJust    = 40
+	customPrefix   = "> "
 )
+
+// CustomString is rendered without escaping of newlines/tabs/etc.
+type CustomString string
+
+func (c CustomString) Render() string {
+	var buf bytes.Buffer
+	lines := strings.Split(string(c), "\n")
+	buf.WriteByte('\n')
+	for i, line := range lines {
+		if i == len(lines)-1 && line == "" {
+			break
+		}
+		buf.WriteString(customPrefix)
+		buf.WriteString(line)
+		buf.WriteByte('\n')
+	}
+	return buf.String()
+}
 
 // Format  is the interface implemented by StreamHandler formatters.
 type Format interface {
@@ -228,6 +247,8 @@ func formatLogfmtValue(value interface{}) string {
 		return strconv.FormatFloat(v, floatFormat, 3, 64)
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		return fmt.Sprintf("%d", value)
+	case CustomString:
+		return v.Render()
 	case string:
 		return escapeString(v)
 	default:
