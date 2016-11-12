@@ -20,11 +20,14 @@ const (
 	LvlWarn
 	LvlInfo
 	LvlDebug
+	LvlTrace
 )
 
 // Returns the name of a Lvl
 func (l Lvl) String() string {
 	switch l {
+	case LvlTrace:
+		return "trce"
 	case LvlDebug:
 		return "dbug"
 	case LvlInfo:
@@ -44,6 +47,8 @@ func (l Lvl) String() string {
 // Useful for parsing command line args and configuration files.
 func LvlFromString(lvlString string) (Lvl, error) {
 	switch lvlString {
+	case "trace", "trce":
+		return LvlTrace, nil
 	case "debug", "dbug":
 		return LvlDebug, nil
 	case "info":
@@ -87,6 +92,7 @@ type Logger interface {
 	SetHandler(h Handler)
 
 	// Log a message at the given level with context key/value pairs
+	Trace(msg string, ctx ...interface{})
 	Debug(msg string, ctx ...interface{})
 	Info(msg string, ctx ...interface{})
 	Warn(msg string, ctx ...interface{})
@@ -126,6 +132,10 @@ func newContext(prefix []interface{}, suffix []interface{}) []interface{} {
 	n := copy(newCtx, prefix)
 	copy(newCtx[n:], normalizedSuffix)
 	return newCtx
+}
+
+func (l *logger) Trace(msg string, ctx ...interface{}) {
+	l.write(msg, LvlTrace, ctx)
 }
 
 func (l *logger) Debug(msg string, ctx ...interface{}) {
