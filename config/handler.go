@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/gernoteger/mapstructure-hooks"
+
 )
 
 // Just the selector for the Handler!
@@ -43,6 +44,7 @@ func Register() {
 	hooks.Register(HandlerConfigType, "stdout", NewStdoutConfig)
 	hooks.Register(HandlerConfigType, "stderr", NewStderrConfig)
 	hooks.Register(HandlerConfigType, "file", NewFileConfig)
+	hooks.Register(HandlerConfigType, "gelf", NewGelfConfig)
 }
 
 
@@ -110,3 +112,23 @@ func (c *FileConfig) NewHandler() (log15.Handler, error) {
 	}
 	return h,nil
 }
+
+
+type GelfConfig struct {
+	LevelHandlerConfig `mapstructure:",squash"`
+	Address string
+}
+
+// make sure its's the right interface
+var _ HandlerConfig = (*GelfConfig)(nil)
+
+
+func NewGelfConfig() interface{} {
+	return &GelfConfig{}
+}
+
+func (c * GelfConfig) NewHandler() (log15.Handler, error) {
+	h,err:=log15.GelfHandler(c.Address)
+	return h,err
+}
+

@@ -4,36 +4,24 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	//	_ "geger.at/logsExplorer/log15/graylog"
+
 	"bufio"
 	"encoding/json"
 	"github.com/inconshreveable/log15"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 	"io"
 	"path/filepath"
-	"github.com/gernoteger/mapstructure-hooks"
-	"gopkg.in/yaml.v2"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/assert"
 )
 
-
-func testConfigLogger(config string) (log15.Logger, error) {
-	c := LoggerConfig{}
-
-	ci := make(map[string]interface{})
-	err := yaml.Unmarshal([]byte(config), &ci)
+func testConfigLogger(conf string) (log15.Logger, error) {
+	configMap := make(map[string]interface{})
+	err := yaml.Unmarshal([]byte(conf), &configMap)
 	if err != nil {
 		return nil, err
 	}
-
-	// das gehört zusammen!!
-	err = hooks.Decode(ci, &c)
-	if err != nil {
-		return nil, err
-	}
-	l, err := c.NewLogger()
-
-	return l, err
+	return Logger(configMap)
 }
 
 func testParseFile(path string) ([]map[string]interface{}, error) {
@@ -72,10 +60,10 @@ func testParseReader(file io.Reader) ([]map[string]interface{}, error) {
 	return records, nil
 }
 
-func testPrepareForFile(path string) error{
+func testPrepareForFile(path string) error {
 	lfile := "./testdata/temp/logTestLevelConfig.log"
 
-	err:=os.MkdirAll(filepath.Dir(lfile), 0777)
+	err := os.MkdirAll(filepath.Dir(lfile), 0777)
 	if err != nil {
 		return err
 	}
@@ -88,7 +76,7 @@ func TestReadSimpleConfig(t *testing.T) {
 
 	require := require.New(t)
 
-	var t1 = `
+	var config = `
   level: INFO
   handlers:
     - kind: stdout
@@ -100,20 +88,38 @@ func TestReadSimpleConfig(t *testing.T) {
     - kind: stdout
       format: logfmt
       level: info
-`
+ `
 
-	l, err := testConfigLogger(t1)
+	l, err := testConfigLogger(config)
 	require.Nil(err)
 
 	l.Info("Hello, logs!")
 	l.Debug("Hello, debug logs!")
 }
+func TestGelfConfig(t *testing.T) {
+	t.Parallel()
+
+	require := require.New(t)
+
+	var config = `
+  level: INFO
+  handlers:
+    - kind: gelf
+      address: "web:12201"
+`
+
+	l, err := testConfigLogger(config)
+	require.Nil(err)
+
+	l.Info("Hello, gelf!")
+}
+
 
 func TestLevelConfig(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
-	var t1 = `
+	var config = `
   level: Warn
   handlers:
     - kind: file
@@ -125,17 +131,17 @@ func TestLevelConfig(t *testing.T) {
 
 	testPrepareForFile(lfile)
 
-	l, err := testConfigLogger(t1)
+	l, err := testConfigLogger(config)
 	require.Nil(err)
 
 	l.Info("Hello, logs!")
-	l.Debug("Hello, debug logs!","mark",1)
+	l.Debug("Hello, debug logs!", "mark", 1)
 
 	r, err := testParseFile(lfile)
 	require.Nil(err)
 	//outputs.Dump(r, "records")
-	require.EqualValues(1,len(r))
+	require.EqualValues(1, len(r))
 
-	assert.Equal("Hello, logs!",r[0]["msg"])
+	assert.Equal("Hello, logs!", r[0]["msg"])
 	//assert.EqualValues(1,r[1]["mark"])
 }
