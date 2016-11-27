@@ -5,4 +5,12 @@ This is a deliberate design decitin in order to decouple reading of configs from
 Handlers and Loggers from the config.
 
 # Usage
-TODO
+TODO: get from tests / create examples
+
+
+# Add new Handlers
+
+## Integrated as PR
+
+## As  self-contained project
+TODO: describe needed structs+ imports 
