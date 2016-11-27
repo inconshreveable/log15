@@ -351,6 +351,10 @@ func (m muster) FileHandler(path string, fmtr Format) Handler {
 	return must(FileHandler(path, fmtr))
 }
 
+func (m muster) GelfHandler(address string) Handler {
+	return must(GelfHandler(address))
+}
+
 func (m muster) NetHandler(network, addr string, fmtr Format) Handler {
 	return must(NetHandler(network, addr, fmtr))
 }
