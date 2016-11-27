@@ -1,30 +1,20 @@
-package graylog
+package gelfconfig
 
 import (
 	"testing"
-	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 	"github.com/inconshreveable/log15"
-
-	"geger.at/logsExplorer/log15/config"
-	"github.com/gernoteger/mapstructure-hooks"
+	"github.com/inconshreveable/log15/config"
+	"github.com/stretchr/testify/require"
 )
 
 func testConfigLogger(conf string) (log15.Logger, error) {
-	c := config.LoggerConfig{}
-
-	ci := make(map[string]interface{})
-	err := yaml.Unmarshal([]byte(conf), &ci)
+	configMap := make(map[string]interface{})
+	err := yaml.Unmarshal([]byte(conf), &configMap)
 	if err != nil {
 		return nil, err
 	}
-	err = hooks.Decode(ci, &c)
-	if err != nil {
-		return nil, err
-	}
-	l, err := c.NewLogger()
-
-	return l, err
+	return config.Logger(configMap)
 }
 
 
@@ -41,12 +31,6 @@ func TestUseSimpleConfigWithGelf(t *testing.T) {
   handlers:
     - kind: stdout
       format: terminal
-      level: info
-    - kind: stderr
-      format: json
-      level: info
-    - kind: stdout
-      format: logfmt
       level: info
     - kind: gelf
       address: "web:12201"

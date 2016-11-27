@@ -1,11 +1,10 @@
-package graylog
+package gelfconfig
 
 import (
 	"github.com/gernoteger/mapstructure-hooks"
 	"github.com/inconshreveable/log15"
 
-	"geger.at/logsExplorer/log15/config"
-	"geger.at/logsExplorer/log15/graylog"
+	"github.com/inconshreveable/log15/config"
 )
 
 type GelfConfig struct {
@@ -22,7 +21,7 @@ func NewConfig() interface{} {
 }
 
 func (c * GelfConfig) NewHandler() (log15.Handler, error) {
-	h,err:=graylog.New(c.Address)
+	h,err:=log15.GelfHandler(c.Address)
 	return h,err
 }
 

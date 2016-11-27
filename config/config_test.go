@@ -25,6 +25,8 @@ func testConfigLogger(config string) (log15.Logger, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// das gehört zusammen!!
 	err = hooks.Decode(ci, &c)
 	if err != nil {
 		return nil, err

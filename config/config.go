@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/inconshreveable/log15"
 	"strings"
+	"github.com/gernoteger/mapstructure-hooks"
 )
 
 // LoggerConfig is the central configuration that will be populated from logfiles by various Method
@@ -57,3 +58,28 @@ func (c *LoggerConfig) NewLogger() (log15.Logger, error) {
 	return l, nil
 }
 
+// LoggerConfig creates a new config from map data
+func NewLoggerConfig(configMap map[string]interface{}) (*LoggerConfig,error) {
+	c := LoggerConfig{}
+	err := hooks.Decode(configMap, &c)
+	if err != nil {
+		return nil, err
+	}
+	return &c,nil
+}
+
+// Logger creates a new Logger from a configuration map
+func Logger(config map[string]interface{}) (log15.Logger,error) {
+
+	configMap,err:=NewLoggerConfig(config)
+	if err != nil {
+		return nil,err
+	}
+	// das gehört zusammen!!
+	c := LoggerConfig{}
+	err = hooks.Decode(configMap, &c)
+	if err != nil {
+		return nil, err
+	}
+	return c.NewLogger()
+}
