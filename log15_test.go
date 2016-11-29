@@ -6,14 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-stack/stack"
-	"github.com/inconshreveable/log15/gelf"
 	"net"
 	"regexp"
 	"runtime"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/go-stack/stack"
+	"github.com/inconshreveable/log15/gelf"
 )
 
 func testHandler() (Handler, *Record) {
