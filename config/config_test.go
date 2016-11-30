@@ -7,12 +7,13 @@ import (
 
 	"bufio"
 	"encoding/json"
+	"io"
+	"path/filepath"
+
 	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
-	"io"
-	"path/filepath"
 )
 
 func testConfigLogger(conf string) (log15.Logger, error) {
@@ -70,7 +71,6 @@ func testPrepareForFile(path string) error {
 	return os.Remove(lfile)
 }
 
-
 func TestReadSimpleConfig(t *testing.T) {
 	t.Parallel()
 
@@ -113,7 +113,6 @@ func TestGelfConfig(t *testing.T) {
 
 	l.Info("Hello, gelf!")
 }
-
 
 func TestLevelConfig(t *testing.T) {
 	assert := assert.New(t)

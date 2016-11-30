@@ -2,8 +2,9 @@ package config
 
 import (
 	"fmt"
-	"github.com/inconshreveable/log15"
 	"strings"
+
+	"github.com/inconshreveable/log15"
 )
 
 type Fmt int
@@ -30,17 +31,15 @@ func FmtFromString(fmtString string) (Fmt, error) {
 	}
 }
 
-
 // UnmarshalString to implement StringUnmarshaller
-func (f Fmt) UnmarshalString(from string) (interface{},error){
+func (f Fmt) UnmarshalString(from string) (interface{}, error) {
 	f1, err := FmtFromString(from)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
-	return f1,nil
+	return f1, nil
 }
-
 
 func (f Fmt) NewFormat() log15.Format {
 	switch f {

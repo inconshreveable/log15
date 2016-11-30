@@ -5,9 +5,8 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/inconshreveable/log15"
 	"github.com/gernoteger/mapstructure-hooks"
-
+	"github.com/inconshreveable/log15"
 )
 
 // Just the selector for the Handler!
@@ -39,7 +38,7 @@ var HandlerConfigType = reflect.TypeOf((*HandlerConfig)(nil)).Elem()
 
 // registers all handlers
 func Register() {
-	hooks.RegisterInterface(HandlerConfigType,"kind")
+	hooks.RegisterInterface(HandlerConfigType, "kind")
 
 	hooks.Register(HandlerConfigType, "stdout", NewStdoutConfig)
 	hooks.Register(HandlerConfigType, "stderr", NewStderrConfig)
@@ -47,19 +46,18 @@ func Register() {
 	hooks.Register(HandlerConfigType, "gelf", NewGelfConfig)
 }
 
-
 type LevelHandlerConfig struct {
-	Level  string
+	Level string
 }
 
-func (c * LevelHandlerConfig) GetLevel() string {
+func (c *LevelHandlerConfig) GetLevel() string {
 	return c.Level
 }
 
 type StreamConfig struct {
-	Handler Handler // make it easy..
-	Format  Fmt
-	Level   string
+	LevelHandlerConfig `mapstructure:",squash"`
+	Handler            Handler // for differentiation of stdion, stdout
+	Format             Fmt
 }
 
 func (c *StreamConfig) NewHandler() (log15.Handler, error) {
@@ -73,12 +71,12 @@ func (c *StreamConfig) NewHandler() (log15.Handler, error) {
 		return nil, fmt.Errorf("invalid handler: %v", c.Handler)
 	}
 
-	log:=log15.StreamHandler(f,c.Format.NewFormat())
+	log := log15.StreamHandler(f, c.Format.NewFormat())
 	//TODO: use level
 
 	return log, nil
 }
-func (c * StreamConfig) GetLevel() string {
+func (c *StreamConfig) GetLevel() string {
 	return c.Level
 }
 
@@ -96,39 +94,35 @@ func NewStderrConfig() interface{} {
 
 type FileConfig struct {
 	LevelHandlerConfig `mapstructure:",squash"`
-	Path	string
-	Format  Fmt
+	Path               string
+	Format             Fmt
 }
 
-func NewFileConfig() interface {} {
+func NewFileConfig() interface{} {
 	return &FileConfig{}
 }
 
-
 func (c *FileConfig) NewHandler() (log15.Handler, error) {
-	h,err:=log15.FileHandler(c.Path,c.Format.NewFormat())
-	if err!=nil{
-		return nil,err
+	h, err := log15.FileHandler(c.Path, c.Format.NewFormat())
+	if err != nil {
+		return nil, err
 	}
-	return h,nil
+	return h, nil
 }
-
 
 type GelfConfig struct {
 	LevelHandlerConfig `mapstructure:",squash"`
-	Address string
+	Address            string
 }
 
 // make sure its's the right interface
 var _ HandlerConfig = (*GelfConfig)(nil)
 
-
 func NewGelfConfig() interface{} {
 	return &GelfConfig{}
 }
 
-func (c * GelfConfig) NewHandler() (log15.Handler, error) {
-	h,err:=log15.GelfHandler(c.Address)
-	return h,err
+func (c *GelfConfig) NewHandler() (log15.Handler, error) {
+	h, err := log15.GelfHandler(c.Address)
+	return h, err
 }
-

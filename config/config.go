@@ -2,9 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/inconshreveable/log15"
 	"strings"
+
 	"github.com/gernoteger/mapstructure-hooks"
+	"github.com/inconshreveable/log15"
 )
 
 // LoggerConfig is the central configuration that will be populated from logfiles by various Method
@@ -23,7 +24,7 @@ func (c *LoggerConfig) NewLogger() (log15.Logger, error) {
 	var handlers []log15.Handler
 
 	if c.Level == "" {
-		c.Level="info"
+		c.Level = "info"
 	}
 	for _, hc := range c.Handlers {
 		if hc == nil {
@@ -36,15 +37,15 @@ func (c *LoggerConfig) NewLogger() (log15.Logger, error) {
 
 		//set log level
 		//TODO: use level: how to get root level??
-		l:=c.Level
-		if hc.GetLevel()!="" {
-			l=hc.GetLevel()
+		l := c.Level
+		if hc.GetLevel() != "" {
+			l = hc.GetLevel()
 		}
 
 		lvl, err := log15.LvlFromString(strings.ToLower(l))
 		if err != nil {
 			//TODO: better explanation!
-			return nil,err
+			return nil, err
 		}
 		h = log15.LvlFilterHandler(lvl, h)
 
@@ -59,21 +60,21 @@ func (c *LoggerConfig) NewLogger() (log15.Logger, error) {
 }
 
 // LoggerConfig creates a new config from map data
-func NewLoggerConfig(configMap map[string]interface{}) (*LoggerConfig,error) {
+func NewLoggerConfig(configMap map[string]interface{}) (*LoggerConfig, error) {
 	c := LoggerConfig{}
 	err := hooks.Decode(configMap, &c)
 	if err != nil {
 		return nil, err
 	}
-	return &c,nil
+	return &c, nil
 }
 
 // Logger creates a new Logger from a configuration map
-func Logger(config map[string]interface{}) (log15.Logger,error) {
+func Logger(config map[string]interface{}) (log15.Logger, error) {
 
-	configMap,err:=NewLoggerConfig(config)
+	configMap, err := NewLoggerConfig(config)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	// das gehört zusammen!!
 	c := LoggerConfig{}
