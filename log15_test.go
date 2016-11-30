@@ -584,15 +584,14 @@ func TestGelfHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("can't load Timezone: %v", err)
 	}
-	logTime := time.Now()
-	logTime = time.Date(2016, 11, 23, 13, 01, 02, 123100*1e3, loc)
+	logTime := time.Date(2016, 11, 23, 13, 01, 02, 123100*1e3, loc)
 
 	msgData := "test message\nsecond line"
 	rec := Record{
 		Time: logTime, //TODO: set fixed!!
 		Lvl:  LvlInfo,
 		Msg:  msgData,
-		Ctx:  []interface{}{"foo", "bar", "withField", "1"}, // no fields yet
+		Ctx:  []interface{}{"foo", "bar", "withField", "1", "foo", "baz"}, // no fields yet
 		Call: stack.Caller(0),
 	}
 
@@ -601,6 +600,7 @@ func TestGelfHandler(t *testing.T) {
 	h.Log(&rec)
 
 	msg, err := r.ReadMessage()
+
 	if err != nil {
 		t.Fatalf("Couldn't read Message: %v", err)
 	}
@@ -621,7 +621,7 @@ func TestGelfHandler(t *testing.T) {
 	}
 
 	// no tests for line; this would be too unstable..
-	extra := map[string]string{"foo": "bar", "withField": "1"}
+	extra := map[string]string{"foo": "baz", "withField": "1"}
 
 	for k, v := range extra {
 		// extra fields are prefixed with "_"
