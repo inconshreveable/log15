@@ -5,6 +5,8 @@ import (
 	"os"
 	"reflect"
 
+	"net/url"
+
 	"github.com/gernoteger/mapstructure-hooks"
 	"github.com/inconshreveable/log15"
 )
@@ -44,6 +46,8 @@ func Register() {
 	hooks.Register(HandlerConfigType, "stderr", NewStderrConfig)
 	hooks.Register(HandlerConfigType, "file", NewFileConfig)
 	hooks.Register(HandlerConfigType, "gelf", NewGelfConfig)
+	hooks.Register(HandlerConfigType, "net", NewNetConfig)
+
 }
 
 type LevelHandlerConfig struct {
@@ -124,5 +128,31 @@ func NewGelfConfig() interface{} {
 
 func (c *GelfConfig) NewHandler() (log15.Handler, error) {
 	h, err := log15.GelfHandler(c.Address)
+	return h, err
+}
+
+type NetConfig struct {
+	LevelHandlerConfig `mapstructure:",squash"`
+	Format             Fmt
+	URL                string
+}
+
+// make sure its's the right interface
+var _ HandlerConfig = (*NetConfig)(nil)
+
+func NewNetConfig() interface{} {
+	return &NetConfig{}
+}
+
+func (c *NetConfig) NewHandler() (log15.Handler, error) {
+	u, err := url.Parse(c.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	h, err := log15.NetHandler(u.Scheme, u.Host, c.Format.NewFormat())
+	if err != nil {
+		return nil, err
+	}
 	return h, err
 }
