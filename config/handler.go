@@ -47,7 +47,7 @@ func Register() {
 	hooks.Register(HandlerConfigType, "file", NewFileConfig)
 	hooks.Register(HandlerConfigType, "gelf", NewGelfConfig)
 	hooks.Register(HandlerConfigType, "net", NewNetConfig)
-
+	hooks.Register(HandlerConfigType, "buffer", NewBufferConfig)
 }
 
 type LevelHandlerConfig struct {
@@ -155,4 +155,27 @@ func (c *NetConfig) NewHandler() (log15.Handler, error) {
 		return nil, err
 	}
 	return h, err
+}
+
+// BufferConfig is a buffered handkler
+type BufferConfig struct {
+	LevelHandlerConfig `mapstructure:",squash"`
+	Handler            HandlerConfig
+	BufSize            int
+}
+
+// make sure its's the right interface
+var _ HandlerConfig = (*BufferConfig)(nil)
+
+func NewBufferConfig() interface{} {
+	return &BufferConfig{BufSize: 10}
+}
+
+func (c *BufferConfig) NewHandler() (log15.Handler, error) {
+
+	h, err := c.Handler.NewHandler()
+	if err != nil {
+		return nil, err
+	}
+	return log15.BufferedHandler(c.BufSize, h), nil
 }

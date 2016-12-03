@@ -173,10 +173,13 @@ func TestNetHandler(t *testing.T) {
 	config := fmt.Sprintf(`
   level: Info
   handlers:
-    - kind: net
-      url: %v://%v
-      format: json
-      level: debug
+    - kind: buffer
+      level: debug # w/o this, the nested handler(s) won't be activated!!
+      handler:
+        kind: net
+        url: %v://%v
+        format: json
+        level: debug
 `, listen.Addr().Network(), listen.Addr().String())
 
 	fmt.Println("config:", config)
