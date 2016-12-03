@@ -18,11 +18,8 @@ type Handler int
 const (
 	HandlerStdout Handler = iota
 	HandlerStderr
-	HandlerFile
-	HandlerNet
 	HandlerSyslog
 	HandlerSyslogNet
-	HandlerGraylog
 )
 
 func init() {

@@ -159,7 +159,7 @@ func readJson(rd *bufio.Reader) (map[string]interface{}, error) {
 	return r, nil
 }
 
-func TestNetHandler(t *testing.T) {
+func TestBufferedTcpNetHandler(t *testing.T) {
 	t.Parallel()
 
 	assert := assert.New(t)
@@ -182,7 +182,7 @@ func TestNetHandler(t *testing.T) {
         level: debug
 `, listen.Addr().Network(), listen.Addr().String())
 
-	fmt.Println("config:", config)
+	//fmt.Println("config:", config)
 	errs := make(chan error)
 	go func() {
 		c, err := listen.Accept()
@@ -196,6 +196,86 @@ func TestNetHandler(t *testing.T) {
 		assert.EqualValues(1, r["mark"])
 
 		r, err = readJson(rd)
+		assert.EqualValues("Hello, debug logs!", r["msg"])
+		assert.EqualValues(2, r["mark"])
+
+		errs <- nil
+	}()
+
+	l, err := testConfigLogger(config)
+	require.Nil(err)
+
+	l.Info("Hello, logs!", "mark", 1)
+	l.Debug("Hello, debug logs!", "mark", 2)
+
+	select {
+	case <-time.After(time.Second):
+		t.Fatalf("Test timed out!")
+	case <-errs:
+		// ok
+	}
+}
+
+func serveUDP(addr string) (*net.UDPConn, error) {
+
+	udpAddr, err := net.ResolveUDPAddr("udp", addr)
+	if err != nil {
+		return nil, fmt.Errorf("ResolveUDPAddr('%s'): %s", addr, err)
+	}
+
+	conn, err := net.ListenUDP("udp", udpAddr)
+	if err != nil {
+		return nil, fmt.Errorf("ListenUDP: %s", err)
+	}
+
+	return conn, nil
+}
+
+func readUDPJson(conn *net.UDPConn) (map[string]interface{}, error) {
+	var r map[string]interface{}
+
+	buffer := make([]byte, 1024)
+	n, _, err := conn.ReadFrom(buffer)
+	if err != nil {
+		return r, err
+	}
+
+	json.Unmarshal(buffer[:n], &r)
+	return r, nil
+}
+
+func TestUdpNetHandler(t *testing.T) {
+	t.Parallel()
+
+	assert := assert.New(t)
+	require := require.New(t)
+
+	conn, err := serveUDP("localhost:0")
+	require.Nil(err)
+
+	fmt.Println("r:", conn.LocalAddr())
+
+	config := fmt.Sprintf(`
+  level: Info
+  handlers:
+    - kind: net
+      url: udp://%v
+      format: json
+      level: debug
+`, conn.LocalAddr())
+
+	//fmt.Println("config:", config)
+	errs := make(chan error)
+	go func() {
+		r, err := readUDPJson(conn)
+		require.Nil(err)
+
+		assert.EqualValues("Hello, logs!", r["msg"])
+		assert.EqualValues(1, r["mark"])
+
+		r, err = readUDPJson(conn)
+		require.Nil(err)
+
 		assert.EqualValues("Hello, debug logs!", r["msg"])
 		assert.EqualValues(2, r["mark"])
 
