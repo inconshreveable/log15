@@ -23,7 +23,7 @@ func testConfigLogger(conf string) (log15.Logger, error) {
 	configMap := make(map[string]interface{})
 	err := yaml.Unmarshal([]byte(conf), &configMap)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("yaml umnarshall failed: %v", err)
 	}
 	return Logger(configMap)
 }
@@ -99,6 +99,32 @@ func TestReadSimpleConfig(t *testing.T) {
 	l.Info("Hello, logs!")
 	l.Debug("Hello, debug logs!")
 }
+
+func TestMultiConfig(t *testing.T) {
+	t.Parallel()
+
+	require := require.New(t)
+
+	var config = `
+  level: INFO
+  handlers:
+    - kind: multi
+      handlers:
+        - kind: stdout
+          format: terminal
+        - kind: stderr
+          format: json
+        - kind: stdout
+          format: logfmt
+`
+
+	l, err := testConfigLogger(config)
+	require.Nil(err)
+
+	l.Info("Hello, logs!")
+	l.Debug("Hello, debug logs!")
+}
+
 func TestGelfConfig(t *testing.T) {
 	t.Parallel()
 
@@ -108,7 +134,7 @@ func TestGelfConfig(t *testing.T) {
   level: INFO
   handlers:
     - kind: gelf
-      address: "web:12201"
+      address: "web:12201" //TODO: auf URL umbauen!!
 `
 
 	l, err := testConfigLogger(config)

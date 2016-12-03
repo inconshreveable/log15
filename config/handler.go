@@ -18,8 +18,6 @@ type Handler int
 const (
 	HandlerStdout Handler = iota
 	HandlerStderr
-	HandlerSyslog
-	HandlerSyslogNet
 )
 
 func init() {
@@ -44,7 +42,10 @@ func Register() {
 	hooks.Register(HandlerConfigType, "file", NewFileConfig)
 	hooks.Register(HandlerConfigType, "gelf", NewGelfConfig)
 	hooks.Register(HandlerConfigType, "net", NewNetConfig)
+
 	hooks.Register(HandlerConfigType, "buffer", NewBufferConfig)
+	hooks.Register(HandlerConfigType, "multi", NewMultiConfig)
+
 }
 
 type LevelHandlerConfig struct {
@@ -154,7 +155,7 @@ func (c *NetConfig) NewHandler() (log15.Handler, error) {
 	return h, err
 }
 
-// BufferConfig is a buffered handkler
+// BufferConfig is a buffered handler
 type BufferConfig struct {
 	LevelHandlerConfig `mapstructure:",squash"`
 	Handler            HandlerConfig
@@ -175,4 +176,30 @@ func (c *BufferConfig) NewHandler() (log15.Handler, error) {
 		return nil, err
 	}
 	return log15.BufferedHandler(c.BufSize, h), nil
+}
+
+// MultiHandler fans out ot all handlers
+type MultiConfig struct {
+	LevelHandlerConfig `mapstructure:",squash"`
+	Handlers           []HandlerConfig
+}
+
+// make sure its's the right interface
+var _ HandlerConfig = (*MultiConfig)(nil)
+
+func NewMultiConfig() interface{} {
+	return &MultiConfig{}
+}
+
+func (c *MultiConfig) NewHandler() (log15.Handler, error) {
+	// make 'em all
+	hh := make([]log15.Handler, len(c.Handlers))
+	for i, hc := range c.Handlers {
+		var err error
+		hh[i], err = hc.NewHandler()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return log15.MultiHandler(hh...), nil
 }
