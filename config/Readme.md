@@ -7,7 +7,7 @@ Handlers and Loggers from this configuration.
 
 # Usage
 
-See this example
+See this example. Detailled examples for all Handlers can be found in the tests.
 
 ```go
 func getMapFromConfiguration(config string) (map[string]interface{}, error) {

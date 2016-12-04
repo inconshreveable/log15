@@ -45,6 +45,8 @@ func Register() {
 
 	hooks.Register(HandlerConfigType, "buffer", NewBufferConfig)
 	hooks.Register(HandlerConfigType, "multi", NewMultiConfig)
+	hooks.Register(HandlerConfigType, "filter", NewMatchFilterConfig)
+	hooks.Register(HandlerConfigType, "failover", NewFailoverConfig)
 
 }
 
@@ -178,6 +180,8 @@ func (c *BufferConfig) NewHandler() (log15.Handler, error) {
 	return log15.BufferedHandler(c.BufSize, h), nil
 }
 
+// ---- MultiHandler
+
 // MultiHandler fans out ot all handlers
 type MultiConfig struct {
 	LevelHandlerConfig `mapstructure:",squash"`
@@ -191,15 +195,73 @@ func NewMultiConfig() interface{} {
 	return &MultiConfig{}
 }
 
-func (c *MultiConfig) NewHandler() (log15.Handler, error) {
-	// make 'em all
-	hh := make([]log15.Handler, len(c.Handlers))
-	for i, hc := range c.Handlers {
+// handlers creates handles form []HandlersConfig
+func handlers(c []HandlerConfig) ([]log15.Handler, error) {
+	hh := make([]log15.Handler, len(c))
+	for i, hc := range c {
 		var err error
 		hh[i], err = hc.NewHandler()
 		if err != nil {
 			return nil, err
 		}
 	}
+	return hh, nil
+}
+
+func (c *MultiConfig) NewHandler() (log15.Handler, error) {
+	// make 'em all
+	hh, err := handlers(c.Handlers)
+	if err != nil {
+		return nil, err
+	}
 	return log15.MultiHandler(hh...), nil
+}
+
+//-------------- MatchFilterHandler
+
+// MatchFilterHandler onyl fires if field matches value
+type MatchFilterConfig struct {
+	LevelHandlerConfig `mapstructure:",squash"`
+	Handler            HandlerConfig
+	Key                string
+	Value              interface{}
+}
+
+// make sure its's the right interface
+var _ HandlerConfig = (*MatchFilterConfig)(nil)
+
+func NewMatchFilterConfig() interface{} {
+	return &MatchFilterConfig{}
+}
+
+func (c *MatchFilterConfig) NewHandler() (log15.Handler, error) {
+	h, err := c.Handler.NewHandler()
+	if err != nil {
+		return nil, err
+	}
+	return log15.MatchFilterHandler(c.Key, c.Value, h), nil
+}
+
+// ---- FailoverHandler
+
+// FailoverConfig configure FailoverHandler
+type FailoverConfig struct {
+	LevelHandlerConfig `mapstructure:",squash"`
+	Handlers           []HandlerConfig
+}
+
+// make sure its's the right interface
+var _ HandlerConfig = (*FailoverConfig)(nil)
+
+func NewFailoverConfig() interface{} {
+	return &FailoverConfig{}
+}
+
+func (c *FailoverConfig) NewHandler() (log15.Handler, error) {
+	// make 'em all
+	hh, err := handlers(c.Handlers)
+	if err != nil {
+		return nil, err
+	}
+	return log15.FailoverHandler(hh...), nil
 }

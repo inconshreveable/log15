@@ -125,6 +125,54 @@ func TestMultiConfig(t *testing.T) {
 	l.Debug("Hello, debug logs!")
 }
 
+func TestFailoverConfig(t *testing.T) {
+	t.Parallel()
+
+	require := require.New(t)
+
+	var config = `
+  level: INFO
+  handlers:
+    - kind: failover
+      handlers:
+        - kind: stdout
+          format: terminal
+        - kind: stderr
+          format: json
+        - kind: stdout
+          format: logfmt
+`
+
+	l, err := testConfigLogger(config)
+	require.Nil(err)
+
+	l.Info("Hello, logs!")
+	l.Debug("Hello, debug logs!")
+}
+
+func TestMatchFilterConfig(t *testing.T) {
+	t.Parallel()
+
+	require := require.New(t)
+
+	var config = `
+  level: info
+  handlers:
+    - kind: filter
+      key: matcher
+      value: foo
+      handler:
+        kind: stdout
+        format: json
+`
+
+	l, err := testConfigLogger(config)
+	require.Nil(err)
+
+	l.Info("log foo", "matcher", "foo")
+	l.Info("log bar", "matcher", "bar")
+}
+
 func TestGelfConfig(t *testing.T) {
 	t.Parallel()
 
@@ -134,7 +182,7 @@ func TestGelfConfig(t *testing.T) {
   level: INFO
   handlers:
     - kind: gelf
-      address: "web:12201" //TODO: auf URL umbauen!!
+      address: "web:12201"
 `
 
 	l, err := testConfigLogger(config)
