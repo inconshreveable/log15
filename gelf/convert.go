@@ -3,12 +3,13 @@ package gelf
 import (
 	"strconv"
 	"strings"
+	"fmt"
 )
 
 func CtxToMap(ctx []interface{}) map[string]interface{} {
 	m := make(map[string]interface{}, len(ctx)/2)
 	for i := 0; i < len(ctx); i += 2 {
-		s := ctx[i].(string)
+		s := fmt.Sprintf("%v", ctx[i])
 		m["_"+s] = ctx[i+1]
 	}
 
