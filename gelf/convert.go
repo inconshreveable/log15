@@ -1,9 +1,9 @@
 package gelf
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
-	"fmt"
 )
 
 func CtxToMap(ctx []interface{}) map[string]interface{} {
