@@ -92,9 +92,11 @@ func TestSyslogNetConfig(t *testing.T) {
     - kind: syslog
       tag: testingnet
       facility: local6
-      #url: tcp://web:1514
-      url: udp://web:1514
+      #url: tcp://logger:1514
+      url: udp://logger:1514
 `
+
+	givenHostAvailable("logger", t)
 
 	l, err := testConfigLogger(config)
 	require.Nil(err)

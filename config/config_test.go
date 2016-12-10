@@ -74,6 +74,14 @@ func testPrepareForFile(path string) error {
 	return os.Remove(lfile)
 }
 
+// givenHostAvailable skips if host not available
+func givenHostAvailable(host string, t *testing.T) {
+	ips, err := net.LookupIP(host)
+	if err != nil || len(ips) == 0 {
+		t.Skipf("can't resolve host '%v'", host)
+	}
+}
+
 func TestReadSimpleConfig(t *testing.T) {
 	t.Parallel()
 
@@ -182,8 +190,10 @@ func TestGelfConfig(t *testing.T) {
   level: INFO
   handlers:
     - kind: gelf
-      address: "web:12201"
+      address: "logger:12201"
 `
+
+	givenHostAvailable("logger", t)
 
 	l, err := testConfigLogger(config)
 	require.Nil(err)
