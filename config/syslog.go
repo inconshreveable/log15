@@ -3,15 +3,11 @@
 package config
 
 import (
-	"log/syslog"
-
 	"fmt"
-
+	"log/syslog"
+	"net/url"
 	"strings"
 
-	"net/url"
-
-	"geger.at/logsExplorer/outputs"
 	"github.com/gernoteger/mapstructure-hooks"
 	"github.com/inconshreveable/log15"
 )
@@ -97,9 +93,6 @@ func (c *SyslogConfig) NewHandler() (log15.Handler, error) {
 			return nil, err
 		}
 
-		outputs.Dump(u, "u")
-		outputs.Dump(u.Host, "host")
-		outputs.Dump(u.Scheme, "scheme")
 		return log15.SyslogNetHandler(u.Scheme, u.Host, p, c.Tag, c.Format.NewFormat())
 	}
 	return log15.SyslogHandler(p, c.Tag, c.Format.NewFormat())
