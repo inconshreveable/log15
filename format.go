@@ -149,7 +149,7 @@ func JsonFormatEx(pretty, lineSeparated bool) Format {
 			if !ok {
 				props[errorKey] = fmt.Sprintf("%+v is not a string key", r.Ctx[i])
 			}
-			props[k] = formatJSONValue(r.Ctx[i+1])
+			props[k] = formatJsonValue(r.Ctx[i+1])
 		}
 
 		b, err := jsonMarshal(props)
@@ -194,8 +194,7 @@ func formatShared(value interface{}) (result interface{}) {
 	}
 }
 
-// formatJSONValue formats value appropriate for JSON.
-func formatJSONValue(value interface{}) interface{} {
+func formatJsonValue(value interface{}) interface{} {
 	value = formatShared(value)
 	switch value.(type) {
 	case int, int8, int16, int32, int64, float32, float64, uint, uint8, uint16, uint32, uint64, string:
