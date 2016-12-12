@@ -7,6 +7,7 @@ import (
 	"github.com/mattn/go-colorable"
 )
 
+// Predefined handlers
 var (
 	root          *logger
 	StdoutHandler = StreamHandler(os.Stdout, LogfmtFormat())

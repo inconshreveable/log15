@@ -351,9 +351,8 @@ type failingWriter struct {
 func (w *failingWriter) Write(buf []byte) (int, error) {
 	if w.fail {
 		return 0, errors.New("fail")
-	} else {
-		return len(buf), nil
 	}
+	return len(buf), nil
 }
 
 func TestFailoverHandler(t *testing.T) {
