@@ -55,6 +55,7 @@ func SpeculativeHandler(size int, h log.Handler) *Speculative {
 	}
 }
 
+// Speculative is the Log15.Handler. Read `SpeculativeHandler` for more information.
 type Speculative struct {
 	mu      sync.Mutex
 	idx     int
@@ -63,6 +64,7 @@ type Speculative struct {
 	full    bool
 }
 
+// Log implements log15.Handler interface
 func (h *Speculative) Log(r *log.Record) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -72,6 +74,7 @@ func (h *Speculative) Log(r *log.Record) error {
 	return nil
 }
 
+// Flush logs all records on the handler.
 func (h *Speculative) Flush() {
 	recs := make([]*log.Record, 0)
 	func() {
@@ -104,14 +107,17 @@ func HotSwapHandler(h log.Handler) *HotSwap {
 	return hs
 }
 
+// HotSwap is the Log15.Handler. Read `HotSwapHandler` for more information.
 type HotSwap struct {
 	handler unsafe.Pointer
 }
 
+// Log implements log15.Handler interface.
 func (h *HotSwap) Log(r *log.Record) error {
 	return (*(*log.Handler)(atomic.LoadPointer(&h.handler))).Log(r)
 }
 
+// Swap atomically the logger handler.
 func (h *HotSwap) Swap(newHandler log.Handler) {
 	atomic.StorePointer(&h.handler, unsafe.Pointer(&newHandler))
 }
