@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -94,11 +95,9 @@ func LogfmtFormat() Format {
 }
 
 func logfmt(buf *bytes.Buffer, ctx []interface{}, color int) {
-	for i := 0; i < len(ctx); i += 2 {
-		if i != 0 {
-			buf.WriteByte(' ')
-		}
+	entries := []string{}
 
+	for i := 0; i < len(ctx); i += 2 {
 		k, ok := ctx[i].(string)
 		v := formatLogfmtValue(ctx[i+1])
 		if !ok {
@@ -107,12 +106,20 @@ func logfmt(buf *bytes.Buffer, ctx []interface{}, color int) {
 
 		// XXX: we should probably check that all of your key bytes aren't invalid
 		if color > 0 {
-			fmt.Fprintf(buf, "\x1b[%dm%s\x1b[0m=%s", color, k, v)
+			entries = append(entries, fmt.Sprintf("\x1b[%dm%s\x1b[0m=%s", color, k, v))
 		} else {
-			buf.WriteString(k)
-			buf.WriteByte('=')
-			buf.WriteString(v)
+			entries = append(entries, k+"="+v)
 		}
+	}
+
+	sort.Strings(entries)
+
+	for i, v := range entries {
+		if i != 0 {
+			buf.WriteByte(' ')
+		}
+
+		fmt.Fprint(buf, v)
 	}
 
 	buf.WriteByte('\n')
