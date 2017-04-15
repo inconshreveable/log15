@@ -3,8 +3,8 @@ package log15
 import (
 	"os"
 
-	"github.com/inconshreveable/log15/term"
 	"github.com/mattn/go-colorable"
+	isatty "github.com/mattn/go-isatty"
 )
 
 // Predefined handlers
@@ -15,11 +15,11 @@ var (
 )
 
 func init() {
-	if term.IsTty(os.Stdout.Fd()) {
+	if isatty.IsTerminal(os.Stdout.Fd()) {
 		StdoutHandler = StreamHandler(colorable.NewColorableStdout(), TerminalFormat())
 	}
 
-	if term.IsTty(os.Stderr.Fd()) {
+	if isatty.IsTerminal(os.Stderr.Fd()) {
 		StderrHandler = StreamHandler(colorable.NewColorableStderr(), TerminalFormat())
 	}
 
