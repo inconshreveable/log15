@@ -117,9 +117,10 @@ func CallerFuncHandler(h Handler) Handler {
 // CallerStackHandler returns a Handler that adds a stack trace to the context
 // with key "stack". The stack trace is formated as a space separated list of
 // call sites inside matching []'s. The most recent call site is listed first.
+// Use 'skip' as an index to exclude stack records, starting from the most recent ones.
 // Each call site is formatted according to format. See the documentation of
 // log15/stack.Call.Format for the list of supported formats.
-func CallerStackHandler(format string, h Handler) Handler {
+func CallerStackHandler(format string, h Handler, skip int) Handler {
 	return FuncHandler(func(r *Record) error {
 		s := stack.Callers().
 			TrimBelow(stack.Call(r.CallPC[0])).
@@ -127,8 +128,9 @@ func CallerStackHandler(format string, h Handler) Handler {
 		if len(s) > 0 {
 			buf := &bytes.Buffer{}
 			buf.WriteByte('[')
-			for i, pc := range s {
-				if i > 0 {
+			for i := skip; i < len(s); i++ {
+				pc := s[i]
+				if i > skip {
 					buf.WriteByte(' ')
 				}
 				fmt.Fprintf(buf, format, pc)
