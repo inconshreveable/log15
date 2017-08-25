@@ -97,6 +97,7 @@ type Logger interface {
 	Warn(msg string, ctx ...interface{})
 	Error(msg string, ctx ...interface{})
 	Crit(msg string, ctx ...interface{})
+	SetStackDepth(depth int) Logger
 }
 
 type logger struct {
@@ -131,7 +132,7 @@ func (l *logger) SetStackDepth(depth int) Logger {
 }
 
 func (l *logger) New(ctx ...interface{}) Logger {
-	child := &logger{newContext(l.ctx, ctx), new(swapHandler), defaultStackDepth}
+	child := &logger{newContext(l.ctx, ctx), new(swapHandler), l.stackDepth}
 	child.SetHandler(l.h)
 	return child
 }
