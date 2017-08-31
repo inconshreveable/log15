@@ -255,13 +255,15 @@ func TestNetHandler(t *testing.T) {
 	go func() {
 		c, err := l.Accept()
 		if err != nil {
-			t.Fatalf("Failed to accept connection: %v", err)
+			errs <- fmt.Errorf("Failed to accept connection: %v", err)
+			return
 		}
 
 		rd := bufio.NewReader(c)
 		s, err := rd.ReadString('\n')
 		if err != nil {
-			t.Fatalf("Failed to read string: %v", err)
+			errs <- fmt.Errorf("Failed to read string: %v", err)
+			return
 		}
 
 		got := s[27:]
@@ -284,8 +286,10 @@ func TestNetHandler(t *testing.T) {
 	select {
 	case <-time.After(time.Second):
 		t.Fatalf("Test timed out!")
-	case <-errs:
-		// ok
+	case err := <-errs:
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
