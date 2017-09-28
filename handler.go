@@ -7,7 +7,7 @@ import (
 	"os"
 	"reflect"
 	"sync"
-
+	"path"
 	"github.com/go-stack/stack"
 )
 
@@ -62,11 +62,18 @@ func SyncHandler(h Handler) Handler {
 // using the given format. If the path
 // already exists, FileHandler will append to the given file. If it does not,
 // FileHandler will create the file with mode 0644.
-func FileHandler(path string, fmtr Format) (Handler, error) {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+func FileHandler(filePath string, fmtr Format) (Handler, error) {
+	
+	err := os.MkdirAll(path.Dir(path),os.ModeDir)
+	if err != nil{
+		return nil,err
+	}
+
+	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return nil, err
 	}
+
 	return closingHandler{f, StreamHandler(f, fmtr)}, nil
 }
 
@@ -347,8 +354,8 @@ func must(h Handler, err error) Handler {
 
 type muster struct{}
 
-func (m muster) FileHandler(path string, fmtr Format) Handler {
-	return must(FileHandler(path, fmtr))
+func (m muster) FileHandler(filePath string, fmtr Format) Handler {
+	return must(FileHandler(filePath, fmtr))
 }
 
 func (m muster) NetHandler(network, addr string, fmtr Format) Handler {
