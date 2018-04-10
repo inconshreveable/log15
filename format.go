@@ -116,7 +116,7 @@ func logfmt(buf *bytes.Buffer, ctx []interface{}, color int) {
 		}
 	}
 
-	buf.WriteByte('\n')
+	newLine(buf)
 }
 
 // JsonFormat formats log records as JSON objects separated by newlines.
