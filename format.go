@@ -160,7 +160,7 @@ func JsonFormatEx(pretty, lineSeparated bool) Format {
 		}
 
 		if lineSeparated {
-			b = append(b, '\n')
+			b = newLineJson(b)
 		}
 
 		return b
