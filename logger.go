@@ -7,9 +7,6 @@ import (
 	"github.com/go-stack/stack"
 )
 
-const timeKey = "t"
-const lvlKey = "lvl"
-const msgKey = "msg"
 const errorKey = "LOG15_ERROR"
 
 // Lvl is a type for predefined log levels.
@@ -89,6 +86,9 @@ type Logger interface {
 	// SetHandler updates the logger to write records to the specified handler.
 	SetHandler(h Handler)
 
+	// SetRecordKeyNames updates the key names used in new Records produced by this logger.
+	SetRecordKeyNames(RecordKeyNames)
+
 	// Log a message at the given level with context key/value pairs
 	Debug(msg string, ctx ...interface{})
 	Info(msg string, ctx ...interface{})
@@ -98,27 +98,24 @@ type Logger interface {
 }
 
 type logger struct {
-	ctx []interface{}
-	h   *swapHandler
+	ctx      []interface{}
+	h        *swapHandler
+	keyNames RecordKeyNames
 }
 
 func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
 	l.h.Log(&Record{
-		Time: time.Now(),
-		Lvl:  lvl,
-		Msg:  msg,
-		Ctx:  newContext(l.ctx, ctx),
-		Call: stack.Caller(2),
-		KeyNames: RecordKeyNames{
-			Time: timeKey,
-			Msg:  msgKey,
-			Lvl:  lvlKey,
-		},
+		Time:     time.Now(),
+		Lvl:      lvl,
+		Msg:      msg,
+		Ctx:      newContext(l.ctx, ctx),
+		Call:     stack.Caller(2),
+		KeyNames: l.keyNames,
 	})
 }
 
 func (l *logger) New(ctx ...interface{}) Logger {
-	child := &logger{newContext(l.ctx, ctx), new(swapHandler)}
+	child := &logger{newContext(l.ctx, ctx), new(swapHandler), l.keyNames}
 	child.SetHandler(l.h)
 	return child
 }
@@ -157,6 +154,10 @@ func (l *logger) GetHandler() Handler {
 
 func (l *logger) SetHandler(h Handler) {
 	l.h.Swap(h)
+}
+
+func (l *logger) SetRecordKeyNames(k RecordKeyNames) {
+	l.keyNames = k
 }
 
 func normalize(ctx []interface{}) []interface{} {

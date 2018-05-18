@@ -23,7 +23,13 @@ func init() {
 		StderrHandler = StreamHandler(colorable.NewColorableStderr(), TerminalFormat())
 	}
 
-	root = &logger{[]interface{}{}, new(swapHandler)}
+	defaultKeyNames := RecordKeyNames{
+		Time: "t",
+		Msg:  "msg",
+		Lvl:  "lvl",
+	}
+
+	root = &logger{[]interface{}{}, new(swapHandler), defaultKeyNames}
 	root.SetHandler(StdoutHandler)
 }
 
