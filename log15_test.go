@@ -568,3 +568,20 @@ func TestConcurrent(t *testing.T) {
 		}
 	}
 }
+
+func TestSetRecordKeyNames(t *testing.T) {
+	defaultKeyNames := RecordKeyNames{Time: "t", Lvl: "lvl", Msg: "msg"}
+	keyNames := RecordKeyNames{Time: "timestamp", Lvl: "level", Msg: "message"}
+
+	l, _, r := testLogger()
+	l.Info("hi")
+	if r.KeyNames != defaultKeyNames {
+		t.Errorf("initial key names are incorrect:%#v", r.KeyNames)
+	}
+
+	l.SetRecordKeyNames(keyNames)
+	l.New("x", "y").Info("hi")
+	if r.KeyNames != keyNames {
+		t.Errorf("key names not preserved: %#v", r.KeyNames)
+	}
+}
