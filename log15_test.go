@@ -576,7 +576,7 @@ func TestSetRecordKeyNames(t *testing.T) {
 	l, _, r := testLogger()
 	l.Info("hi")
 	if r.KeyNames != defaultKeyNames {
-		t.Errorf("initial key names are incorrect:%#v", r.KeyNames)
+		t.Errorf("initial key names are incorrect: %#v", r.KeyNames)
 	}
 
 	l.SetRecordKeyNames(keyNames)
