@@ -1,0 +1,18 @@
+# sample for configuration of log by log15
+handlers:
+  # name of handler which can be defined at will
+  console:
+    handler_type: stdout
+  file:
+    handler_type: file
+    path: ./test.log
+
+loggers:
+  # name of logger which can be defined at will
+  root2:
+    level: error
+    # name of handler which should be defined in element handlers
+    handler_name: console
+  log_test_log_file:
+    level: debug
+    handler_name: file
