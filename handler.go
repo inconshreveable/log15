@@ -236,6 +236,34 @@ func FailoverHandler(hs ...Handler) Handler {
 	})
 }
 
+// TernaryHandler writes all log records to the `yes` handler if the function
+// is true. Otherwise it will write logs to the `no` handler.
+func TernaryHandler(fn func(r *Record) bool, yes Handler, no Handler) Handler {
+	return FuncHandler(func(r *Record) error {
+		if fn(r) {
+			return yes.Log(r)
+		}
+
+		return no.Log(r)
+	})
+}
+
+// LvlTernaryHandler writes all logs above the log level provide to the `yes`
+// handler. Otherwise it will write the logs to the `no` handler. For example
+// you might want to add stack traces to logs only if the log level is error or
+// above:
+//
+//     log.LvlTernaryHandler(
+//         log.LvlError,
+//         log.CallerStackHandler("%+v", log.StdoutHandler),
+//         log.StdoutHandler)
+//
+func LvlTernaryHandler(minLvl Lvl, yes Handler, no Handler) Handler {
+	return TernaryHandler(func(r *Record) bool {
+		return r.Lvl <= minLvl
+	}, yes, no)
+}
+
 // ChannelHandler writes all records to the given channel.
 // It blocks if the channel is full. Useful for async processing
 // of log messages, it's used by BufferedHandler.

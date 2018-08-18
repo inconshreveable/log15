@@ -416,6 +416,68 @@ func TestFailoverHandler(t *testing.T) {
 	}
 }
 
+func TestTernaryHandler(t *testing.T) {
+	t.Parallel()
+
+	l := New()
+	yes, yes_r := testHandler()
+	no, no_r := testHandler()
+
+	alwaysTrue := func(r *Record) bool {
+		return true
+	}
+
+	alwaysFalse := func(r *Record) bool {
+		return false
+	}
+
+	l.SetHandler(TernaryHandler(alwaysTrue, yes, no))
+
+	l.Debug("test ok")
+	if no_r.Msg != "" {
+		t.Fatalf("expected only yes handler to run")
+	}
+	if yes_r.Msg == "" {
+		t.Fatalf("expected yes handler to run")
+	}
+
+	yes, yes_r = testHandler()
+	no, no_r = testHandler()
+	l.SetHandler(TernaryHandler(alwaysFalse, yes, no))
+
+	l.Debug("test ok")
+	if yes_r.Msg != "" {
+		t.Fatalf("expected only no handler to run")
+	}
+	if no_r.Msg == "" {
+		t.Fatalf("expected no handler to run")
+	}
+}
+
+func TestLvlTernaryHandler(t *testing.T) {
+	t.Parallel()
+
+	l := New()
+	yes, yes_r := testHandler()
+	no, no_r := testHandler()
+
+	l.SetHandler(LvlTernaryHandler(LvlError, yes, no))
+
+	l.Debug("test ok")
+	if no_r.Msg == "" || yes_r.Msg != "" {
+		t.Fatalf("expected no handler to run for debug level")
+	}
+
+	yes, yes_r = testHandler()
+	no, no_r = testHandler()
+	l.SetHandler(LvlTernaryHandler(LvlDebug, yes, no))
+
+	l.Debug("test ok")
+	if no_r.Msg != "" || yes_r.Msg == "" {
+		t.Fatalf("expected yes handler to run for debug level")
+	}
+}
+
 // https://github.com/inconshreveable/log15/issues/16
 func TestIndependentSetHandler(t *testing.T) {
 	t.Parallel()
