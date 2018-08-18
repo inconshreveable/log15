@@ -2,6 +2,7 @@ package log15
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/go-stack/stack"
@@ -164,6 +165,9 @@ func normalize(ctx []interface{}) []interface{} {
 	if len(ctx) == 1 {
 		if ctxMap, ok := ctx[0].(Ctx); ok {
 			ctx = ctxMap.toArray()
+		}
+		if reflect.TypeOf(ctx[0]).Kind() == reflect.Slice {
+			ctx = ctx[0].([]interface{})
 		}
 	}
 
