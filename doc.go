@@ -104,7 +104,7 @@ the context.
 
 This will output a line that looks like:
 
-    lvl=eror t=2014-05-02T16:07:23-0700 msg="open file" err="file not found" caller=data.go:42
+    lvl=error t=2014-05-02T16:07:23-0700 msg="open file" err="file not found" caller=data.go:42
 
 Here's an example that logs the call stack rather than just the call site.
 
@@ -115,7 +115,7 @@ Here's an example that logs the call stack rather than just the call site.
 
 This will output a line that looks like:
 
-    lvl=eror t=2014-05-02T16:07:23-0700 msg="open file" err="file not found" stack="[pkg/data.go:42 pkg/cmd/main.go]"
+    lvl=error t=2014-05-02T16:07:23-0700 msg="open file" err="file not found" stack="[pkg/data.go:42 pkg/cmd/main.go]"
 
 The "%+v" format instructs the handler to include the path of the source file
 relative to the compile time GOPATH. The github.com/go-stack/stack package
