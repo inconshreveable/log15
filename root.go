@@ -2,9 +2,6 @@ package log15
 
 import (
 	"os"
-
-	"github.com/mattn/go-colorable"
-	isatty "github.com/mattn/go-isatty"
 )
 
 // Predefined handlers
@@ -13,19 +10,6 @@ var (
 	StdoutHandler = StreamHandler(os.Stdout, LogfmtFormat())
 	StderrHandler = StreamHandler(os.Stderr, LogfmtFormat())
 )
-
-func init() {
-	if isatty.IsTerminal(os.Stdout.Fd()) {
-		StdoutHandler = StreamHandler(colorable.NewColorableStdout(), TerminalFormat())
-	}
-
-	if isatty.IsTerminal(os.Stderr.Fd()) {
-		StderrHandler = StreamHandler(colorable.NewColorableStderr(), TerminalFormat())
-	}
-
-	root = &logger{[]interface{}{}, new(swapHandler)}
-	root.SetHandler(StdoutHandler)
-}
 
 // New returns a new logger with the given context.
 // New is a convenient alias for Root().New
