@@ -115,6 +115,34 @@ func TestJson(t *testing.T) {
 	validate("lvl", "eror")
 }
 
+func TestJSONMap(t *testing.T) {
+	m := map[string]interface{}{
+		"name":     "gopher",
+		"age":      float64(5),
+		"language": "go",
+	}
+
+	l, buf := testFormatter(JsonFormat())
+	l.Error("logging structs", "struct", m)
+
+	var v map[string]interface{}
+	decoder := json.NewDecoder(buf)
+	if err := decoder.Decode(&v); err != nil {
+		t.Fatalf("Error decoding JSON: %v", v)
+	}
+
+	checkMap := func(key string, expected interface{}) {
+		if m[key] != expected {
+			t.Fatalf("Got %v expected %v for %v", m[key], expected, key)
+		}
+	}
+
+	mv := v["struct"].(map[string]interface{})
+	checkMap("name", mv["name"])
+	checkMap("age", mv["age"])
+	checkMap("language", mv["language"])
+}
+
 type testtype struct {
 	name string
 }
