@@ -1,4 +1,8 @@
-![obligatory xkcd](http://imgs.xkcd.com/comics/standards.png)
+
+This package is a fork of https://github.com/inconshreveable/log15 with some minor modifications including:
+
+ * Support for log level `trace`
+
 
 # log15 [![godoc reference](https://godoc.org/github.com/inconshreveable/log15?status.png)](https://godoc.org/github.com/inconshreveable/log15) [![Build Status](https://travis-ci.org/inconshreveable/log15.svg?branch=master)](https://travis-ci.org/inconshreveable/log15)
 
