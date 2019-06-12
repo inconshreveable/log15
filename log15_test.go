@@ -400,13 +400,13 @@ func TestFailoverHandler(t *testing.T) {
 		StreamHandler(w, JsonFormat()),
 		h))
 
-	l.Debug("test ok")
+	l.Trace("test ok")
 	if r.Msg != "" {
 		t.Fatalf("expected no failover")
 	}
 
 	w.fail = true
-	l.Debug("test failover", "x", 1)
+	l.Trace("test failover", "x", 1)
 	if r.Msg != "test failover" {
 		t.Fatalf("expected failover")
 	}
