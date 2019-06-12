@@ -44,7 +44,7 @@ func TestLazy(t *testing.T) {
 	}
 
 	x = 2
-	l.Info("", "x", Lazy{lazy})
+	l.Trace("", "x", Lazy{lazy})
 	if r.Ctx[1] != 2 {
 		t.Fatalf("Lazy function not evaluated, got %v, expected %d", r.Ctx[1], 1)
 	}
@@ -70,7 +70,7 @@ func TestInvalidLazy(t *testing.T) {
 	l.Info("", "x", Lazy{func(x int) int { return x }})
 	validate()
 
-	l.Info("", "x", Lazy{func() {}})
+	l.Trace("", "x", Lazy{func() {}})
 	validate()
 }
 
@@ -123,7 +123,7 @@ func TestJSONMap(t *testing.T) {
 	}
 
 	l, buf := testFormatter(JsonFormat())
-	l.Error("logging structs", "struct", m)
+	l.Trace("logging structs", "struct", m)
 
 	var v map[string]interface{}
 	decoder := json.NewDecoder(buf)
@@ -260,6 +260,11 @@ func TestLvlFilterHandler(t *testing.T) {
 		t.Fatalf("Expected zero record, but got record with msg: %v", r.Msg)
 	}
 
+	l.Trace("trace'd")
+	if r.Msg != "" {
+		t.Fatalf("Got record msg %s expected %s", r.Msg, "")
+	}
+
 	l.Warn("warned")
 	if r.Msg != "warned" {
 		t.Fatalf("Got record msg %s expected %s", r.Msg, "warned")
@@ -269,6 +274,7 @@ func TestLvlFilterHandler(t *testing.T) {
 	if r.Msg != "error'd" {
 		t.Fatalf("Got record msg %s expected %s", r.Msg, "error'd")
 	}
+
 }
 
 func TestNetHandler(t *testing.T) {
@@ -347,16 +353,16 @@ func TestMatchFilterBuiltin(t *testing.T) {
 	t.Parallel()
 
 	l, h, r := testLogger()
-	l.SetHandler(MatchFilterHandler("lvl", LvlError, h))
+	l.SetHandler(MatchFilterHandler("lvl", LvlTrace, h))
 	l.Info("does not pass")
 
 	if r.Msg != "" {
 		t.Fatalf("got info level record that should not have matched")
 	}
 
-	l.Error("error!")
-	if r.Msg != "error!" {
-		t.Fatalf("did not get error level record that should have matched")
+	l.Trace("trace!")
+	if r.Msg != "trace!" {
+		t.Fatalf("did not get trace level record that should have matched")
 	}
 
 	r.Msg = ""
