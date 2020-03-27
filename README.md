@@ -20,8 +20,16 @@ you must vendor the library.
 
 ## Importing
 
+Master branch:
+
 ```go
 import log "github.com/inconshreveable/log15"
+```
+
+Stable release with Go module support:
+
+```go
+import log "github.com/inconshreveable/log15/v3"
 ```
 
 ## Examples
