@@ -191,6 +191,7 @@ func BenchmarkLog15WithoutFields(b *testing.B) {
 func BenchmarkDefaultWarn(b *testing.B) {
 	logger := New("source", "default", "partition", 3)
 	logger.SetHandler(newHandler())
+	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -201,6 +202,7 @@ func BenchmarkDefaultWarn(b *testing.B) {
 func BenchmarkDefaultDebug(b *testing.B) {
 	logger := New("source", "default", "partition", 3)
 	logger.SetHandler(newHandler())
+	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
