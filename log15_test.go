@@ -365,17 +365,16 @@ func TestMatchFilterBuiltin(t *testing.T) {
 		t.Fatalf("did not get error level record that should have matched")
 	}
 
-	// r.Msg = ""
-	// l.SetHandler(MatchFilterHandler("msg", "matching message", h))
-	// l.Info("doesn't match")
-	// if r().Msg != "" {
-	// 	t.Fatalf("got record with wrong message matched")
-	// }
+	l.SetHandler(MatchFilterHandler("msg", "matching message", h))
+	l.Info("doesn't match")
+	if r().Msg != "error!" {
+		t.Fatalf("got record with wrong message matched")
+	}
 
-	// 	l.Debug("matching message")
-	// 	if r().Msg != "matching message" {
-	// 		t.Fatalf("did not get record which matches")
-	// 	}
+	l.Debug("matching message")
+	if r().Msg != "matching message" {
+		t.Fatalf("did not get record which matches")
+	}
 }
 
 type failingWriter struct {
