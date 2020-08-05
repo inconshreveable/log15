@@ -187,3 +187,30 @@ func BenchmarkLog15WithoutFields(b *testing.B) {
 		}
 	})
 }
+
+func BenchmarkDefaultWarn(b *testing.B) {
+	logger := New("source", "default", "partition", 3)
+	logger.SetHandler(newHandler())
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.Warn("warn message")
+		}
+	})
+}
+func BenchmarkDefaultDebug(b *testing.B) {
+	logger := New("source", "default", "partition", 3)
+	logger.SetHandler(newHandler())
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			logger.Debug("debug message")
+		}
+	})
+}
+func newHandler() Handler {
+	lvl := LvlWarn
+	logformat := LogfmtFormat()
+	handler := StreamHandler(ioutil.Discard, logformat)
+	return LvlFilterHandler(lvl, handler)
+}
