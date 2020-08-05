@@ -33,10 +33,11 @@ func BenchmarkDiscard(b *testing.B) {
 
 func BenchmarkLogfmtNoCtx(b *testing.B) {
 	r := Record{
-		Time: time.Now(),
-		Lvl:  LvlInfo,
-		Msg:  "test message",
-		Ctx:  []interface{}{},
+		Time:     time.Now(),
+		Lvl:      LvlInfo,
+		Msg:      "test message",
+		Ctx:      []interface{}{},
+		KeyNames: DefaultRecordKeyNames,
 	}
 
 	logfmt := LogfmtFormat()
@@ -47,10 +48,11 @@ func BenchmarkLogfmtNoCtx(b *testing.B) {
 
 func BenchmarkJsonNoCtx(b *testing.B) {
 	r := Record{
-		Time: time.Now(),
-		Lvl:  LvlInfo,
-		Msg:  "test message",
-		Ctx:  []interface{}{},
+		Time:     time.Now(),
+		Lvl:      LvlInfo,
+		Msg:      "test message",
+		Ctx:      []interface{}{},
+		KeyNames: DefaultRecordKeyNames,
 	}
 
 	jsonfmt := JsonFormat()
