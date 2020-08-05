@@ -25,7 +25,7 @@ func sharedSyslog(fmtr Format, sysWr *syslog.Writer, err error) (Handler, error)
 	if err != nil {
 		return nil, err
 	}
-	h := FuncHandler(func(r *Record) error {
+	h := FuncHandler(func(r Record) error {
 		var syslogFn = sysWr.Info
 		switch r.Lvl {
 		case LvlCrit:
