@@ -41,7 +41,7 @@ func BenchmarkLogfmtNoCtx(b *testing.B) {
 
 	logfmt := LogfmtFormat()
 	for i := 0; i < b.N; i++ {
-		logfmt.Format(&r)
+		logfmt.Format(r)
 	}
 }
 
@@ -55,7 +55,7 @@ func BenchmarkJsonNoCtx(b *testing.B) {
 
 	jsonfmt := JsonFormat()
 	for i := 0; i < b.N; i++ {
-		jsonfmt.Format(&r)
+		jsonfmt.Format(r)
 	}
 }
 
