@@ -29,7 +29,7 @@ import (
 //     }
 //
 func EscalateErrHandler(h log.Handler) log.Handler {
-	return log.FuncHandler(func(r *log.Record) error {
+	return log.FuncHandler(func(r log.Record) error {
 		if r.Lvl > log.LvlError {
 			for i := 1; i < len(r.Ctx); i++ {
 				if v, ok := r.Ctx[i].(error); ok && v != nil {
@@ -51,7 +51,7 @@ func EscalateErrHandler(h log.Handler) log.Handler {
 func SpeculativeHandler(size int, h log.Handler) *Speculative {
 	return &Speculative{
 		handler: h,
-		recs:    make([]*log.Record, size),
+		recs:    make([]log.Record, size),
 	}
 }
 
@@ -59,13 +59,13 @@ func SpeculativeHandler(size int, h log.Handler) *Speculative {
 type Speculative struct {
 	mu      sync.Mutex
 	idx     int
-	recs    []*log.Record
+	recs    []log.Record
 	handler log.Handler
 	full    bool
 }
 
 // Log implements log15.Handler interface
-func (h *Speculative) Log(r *log.Record) error {
+func (h *Speculative) Log(r log.Record) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.recs[h.idx] = r
@@ -76,7 +76,7 @@ func (h *Speculative) Log(r *log.Record) error {
 
 // Flush logs all records on the handler.
 func (h *Speculative) Flush() {
-	recs := make([]*log.Record, 0)
+	recs := make([]log.Record, 0)
 	func() {
 		h.mu.Lock()
 		defer h.mu.Unlock()
@@ -113,7 +113,7 @@ type HotSwap struct {
 }
 
 // Log implements log15.Handler interface.
-func (h *HotSwap) Log(r *log.Record) error {
+func (h *HotSwap) Log(r log.Record) error {
 	return (*(*log.Handler)(atomic.LoadPointer(&h.handler))).Log(r)
 }
 
@@ -126,7 +126,7 @@ func (h *HotSwap) Swap(newHandler log.Handler) {
 // immediately, much like the log.Fatal* methods from the
 // standard log package
 func FatalHandler(h log.Handler) log.Handler {
-	return log.FuncHandler(func(r *log.Record) error {
+	return log.FuncHandler(func(r log.Record) error {
 		err := h.Log(r)
 		if r.Lvl == log.LvlCrit {
 			os.Exit(1)
