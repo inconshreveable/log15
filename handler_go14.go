@@ -10,7 +10,7 @@ type swapHandler struct {
 	handler atomic.Value
 }
 
-func (h *swapHandler) Log(r *Record) error {
+func (h *swapHandler) Log(r Record) error {
 	return (*h.handler.Load().(*Handler)).Log(r)
 }
 

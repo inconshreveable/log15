@@ -20,18 +20,18 @@ const (
 
 // Format  is the interface implemented by StreamHandler formatters.
 type Format interface {
-	Format(r *Record) []byte
+	Format(r Record) []byte
 }
 
 // FormatFunc returns a new Format object which uses
 // the given function to perform record formatting.
-func FormatFunc(f func(*Record) []byte) Format {
+func FormatFunc(f func(Record) []byte) Format {
 	return formatFunc(f)
 }
 
-type formatFunc func(*Record) []byte
+type formatFunc func(Record) []byte
 
-func (f formatFunc) Format(r *Record) []byte {
+func (f formatFunc) Format(r Record) []byte {
 	return f(r)
 }
 
@@ -46,7 +46,7 @@ func (f formatFunc) Format(r *Record) []byte {
 //     [May 16 20:58:45] [DBUG] remove route ns=haproxy addr=127.0.0.1:50002
 //
 func TerminalFormat() Format {
-	return FormatFunc(func(r *Record) []byte {
+	return FormatFunc(func(r Record) []byte {
 		var color = 0
 		switch r.Lvl {
 		case LvlCrit:
@@ -86,7 +86,7 @@ func TerminalFormat() Format {
 // For more details see: http://godoc.org/github.com/kr/logfmt
 //
 func LogfmtFormat() Format {
-	return FormatFunc(func(r *Record) []byte {
+	return FormatFunc(func(r Record) []byte {
 		common := []interface{}{r.KeyNames.Time, r.Time, r.KeyNames.Lvl, r.Lvl, r.KeyNames.Msg, r.Msg}
 		buf := &bytes.Buffer{}
 		logfmt(buf, append(common, r.Ctx...), 0)
@@ -136,7 +136,7 @@ func JsonFormatEx(pretty, lineSeparated bool) Format {
 		}
 	}
 
-	return FormatFunc(func(r *Record) []byte {
+	return FormatFunc(func(r Record) []byte {
 		props := make(map[string]interface{})
 
 		props[r.KeyNames.Time] = r.Time
