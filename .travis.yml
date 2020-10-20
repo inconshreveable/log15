@@ -1,4 +1,7 @@
 language: go
+arch:
+    - amd64
+    - ppc64le
 go_import_path: github.com/inconshreveable/log15
 sudo: false
 
