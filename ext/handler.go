@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	log "github.com/inconshreveable/log15"
+	log "github.com/inconshreveable/log15/v3"
 )
 
 // EscalateErrHandler wraps another handler and passes all records through
