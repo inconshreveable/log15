@@ -8,6 +8,8 @@ import (
 	"github.com/go-stack/stack"
 )
 
+const defaultStackDepth = 2
+
 const timeKey = "t"
 const lvlKey = "lvl"
 const msgKey = "msg"
@@ -101,11 +103,14 @@ type Logger interface {
 	Warn(msg string, ctx ...interface{})
 	Error(msg string, ctx ...interface{})
 	Crit(msg string, ctx ...interface{})
+	SetStackDepth(depth int) Logger
 }
 
 type logger struct {
 	ctx []interface{}
 	h   *swapHandler
+
+	stackDepth int
 }
 
 func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
@@ -114,7 +119,7 @@ func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
 		Lvl:  lvl,
 		Msg:  msg,
 		Ctx:  newContext(l.ctx, ctx),
-		Call: stack.Caller(2),
+		Call: stack.Caller(l.stackDepth),
 		KeyNames: RecordKeyNames{
 			Time: timeKey,
 			Msg:  msgKey,
@@ -123,8 +128,17 @@ func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
 	})
 }
 
+// SetStackDepth resets the stack depth.
+//
+// The argument, depth, is the depth from the app call to logger, which doesn't
+// contain the inner stack depth of logger. The default is 0.
+func (l *logger) SetStackDepth(depth int) Logger {
+	l.stackDepth = depth + defaultStackDepth
+	return l
+}
+
 func (l *logger) New(ctx ...interface{}) Logger {
-	child := &logger{newContext(l.ctx, ctx), new(swapHandler)}
+	child := &logger{newContext(l.ctx, ctx), new(swapHandler), l.stackDepth}
 	child.SetHandler(l.h)
 	return child
 }
