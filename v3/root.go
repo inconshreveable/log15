@@ -10,8 +10,8 @@ import (
 // Predefined handlers
 var (
 	root          *logger
-	StdoutHandler = StreamHandler(os.Stdout, TerminalFormat()) //LogfmtFormat())
-	StderrHandler = StreamHandler(os.Stderr, TerminalFormat()) //LogfmtFormat())
+	StdoutHandler = StreamHandler(os.Stdout, TerminalFormatNoColor()) //LogfmtFormat())
+	StderrHandler = StreamHandler(os.Stderr, TerminalFormatNoColor()) //LogfmtFormat())
 )
 
 func init() {
