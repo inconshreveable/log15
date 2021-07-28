@@ -43,8 +43,8 @@ func Root() Logger {
 // runtime.Caller(2) always refers to the call site in client code.
 
 // Trace is a convenient alias for Root().Trace
-func Trac(msg string, ctx ...interface{}) {
-	root.write(msg, LvlDebug, ctx)
+func Trace(msg string, ctx ...interface{}) {
+	root.write(msg, LvlTrace, ctx)
 }
 
 // Debug is a convenient alias for Root().Debug
