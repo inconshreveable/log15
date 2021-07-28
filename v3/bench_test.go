@@ -1,5 +1,3 @@
-// +build go1.3
-
 package log
 
 import (

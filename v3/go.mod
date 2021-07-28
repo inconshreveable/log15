@@ -1,4 +1,4 @@
-module github.com/ledgerwatch/log
+module github.com/ledgerwatch/log/v3
 
 go 1.16
 
