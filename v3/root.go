@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/mattn/go-colorable"
-	isatty "github.com/mattn/go-isatty"
+	"github.com/mattn/go-isatty"
 )
 
 // Predefined handlers
@@ -41,6 +41,11 @@ func Root() Logger {
 // The following functions bypass the exported logger methods (logger.Debug,
 // etc.) to keep the call depth the same for all paths to logger.write so
 // runtime.Caller(2) always refers to the call site in client code.
+
+// Trace is a convenient alias for Root().Trace
+func Trac(msg string, ctx ...interface{}) {
+	root.write(msg, LvlDebug, ctx)
+}
 
 // Debug is a convenient alias for Root().Debug
 func Debug(msg string, ctx ...interface{}) {

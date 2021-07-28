@@ -23,11 +23,14 @@ const (
 	LvlWarn
 	LvlInfo
 	LvlDebug
+	LvlTrace
 )
 
 // Returns the name of a Lvl
 func (l Lvl) String() string {
 	switch l {
+	case LvlTrace:
+		return "trace"
 	case LvlDebug:
 		return "dbug"
 	case LvlInfo:
@@ -135,6 +138,10 @@ func newContext(prefix []interface{}, suffix []interface{}) []interface{} {
 	n := copy(newCtx, prefix)
 	copy(newCtx[n:], normalizedSuffix)
 	return newCtx
+}
+
+func (l *logger) Trace(msg string, ctx ...interface{}) {
+	l.write(msg, LvlTrace, ctx)
 }
 
 func (l *logger) Debug(msg string, ctx ...interface{}) {
