@@ -1,6 +1,6 @@
 // +build !windows,!plan9
 
-package log15
+package log
 
 import (
 	"log/syslog"

@@ -1,6 +1,6 @@
 // +build go1.3
 
-package log15
+package log
 
 import (
 	"bytes"
