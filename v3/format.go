@@ -1,4 +1,4 @@
-package log15
+package log
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 
 const (
 	timeFormat     = "2006-01-02T15:04:05-0700"
-	termTimeFormat = "01-02|15:04:05"
+	termTimeFormat = "01-02|15:04:05.000"
 	floatFormat    = 'f'
 	termMsgJust    = 40
 )
@@ -76,6 +76,23 @@ func TerminalFormat() Format {
 
 		// print the keys logfmt style
 		logfmt(b, r.Ctx, color)
+		return b.Bytes()
+	})
+}
+
+func TerminalFormatNoColor() Format {
+	return FormatFunc(func(r *Record) []byte {
+		b := &bytes.Buffer{}
+		lvl := strings.ToUpper(r.Lvl.String())
+		fmt.Fprintf(b, "[%s] [%s] %s ", lvl, r.Time.Format(termTimeFormat), r.Msg)
+
+		// try to justify the log output for short messages
+		if len(r.Ctx) > 0 && len(r.Msg) < termMsgJust {
+			b.Write(bytes.Repeat([]byte{' '}, termMsgJust-len(r.Msg)))
+		}
+
+		// print the keys logfmt style
+		logfmt(b, r.Ctx, 0)
 		return b.Bytes()
 	})
 }

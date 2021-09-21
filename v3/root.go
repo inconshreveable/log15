@@ -1,17 +1,17 @@
-package log15
+package log
 
 import (
 	"os"
 
 	"github.com/mattn/go-colorable"
-	isatty "github.com/mattn/go-isatty"
+	"github.com/mattn/go-isatty"
 )
 
 // Predefined handlers
 var (
 	root          *logger
-	StdoutHandler = StreamHandler(os.Stdout, LogfmtFormat())
-	StderrHandler = StreamHandler(os.Stderr, LogfmtFormat())
+	StdoutHandler = StreamHandler(os.Stdout, TerminalFormatNoColor()) //LogfmtFormat())
+	StderrHandler = StreamHandler(os.Stderr, TerminalFormatNoColor()) //LogfmtFormat())
 )
 
 func init() {
@@ -41,6 +41,11 @@ func Root() Logger {
 // The following functions bypass the exported logger methods (logger.Debug,
 // etc.) to keep the call depth the same for all paths to logger.write so
 // runtime.Caller(2) always refers to the call site in client code.
+
+// Trace is a convenient alias for Root().Trace
+func Trace(msg string, ctx ...interface{}) {
+	root.write(msg, LvlTrace, ctx)
+}
 
 // Debug is a convenient alias for Root().Debug
 func Debug(msg string, ctx ...interface{}) {

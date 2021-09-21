@@ -1,8 +1,8 @@
-![obligatory xkcd](http://imgs.xkcd.com/comics/standards.png)
+# log [![godoc reference](https://godoc.org/github.com/ledgerwatch/log?status.png)](https://godoc.org/github.com/ledgerwatch/log) [![Build Status](https://travis-ci.org/ledgerwatch/log.svg?branch=master)](https://travis-ci.org/inconshreveable/log15)
 
-# log15 [![godoc reference](https://godoc.org/github.com/inconshreveable/log15?status.png)](https://godoc.org/github.com/inconshreveable/log15) [![Build Status](https://travis-ci.org/inconshreveable/log15.svg?branch=master)](https://travis-ci.org/inconshreveable/log15)
+Fork of https://github.com/inconshreveable/log15 but renamed to "log" to simplify usage, drop old go versions support
 
-Package log15 provides an opinionated, simple toolkit for best-practice logging in Go (golang) that is both human and machine readable. It is modeled after the Go standard library's [`io`](http://golang.org/pkg/io/) and [`net/http`](http://golang.org/pkg/net/http/) packages and is an alternative to the standard library's [`log`](http://golang.org/pkg/log/) package.
+Provides an opinionated, simple toolkit for best-practice logging in Go (golang) that is both human and machine readable. It is modeled after the Go standard library's [`io`](http://golang.org/pkg/io/) and [`net/http`](http://golang.org/pkg/net/http/) packages and is an alternative to the standard library's [`log`](http://golang.org/pkg/log/) package.
 
 ## Features
 - A simple, easy-to-understand API
@@ -21,7 +21,7 @@ you must vendor the library.
 ## Importing
 
 ```go
-import log "github.com/inconshreveable/log15"
+import log "github.com/ledgerwatch/log"
 ```
 
 ## Examples
