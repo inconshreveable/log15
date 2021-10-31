@@ -24,7 +24,7 @@ func init() {
 	}
 
 	root = &logger{[]interface{}{}, new(swapHandler)}
-	root.SetHandler(StdoutHandler)
+	root.SetHandler(LvlFilterHandler(LvlWarn, StdoutHandler))
 }
 
 // New returns a new logger with the given context.
