@@ -71,3 +71,22 @@ func Error(msg string, ctx ...interface{}) {
 func Crit(msg string, ctx ...interface{}) {
 	root.write(msg, LvlCrit, ctx)
 }
+
+func Level(l Lvl, msg string, ctx ...interface{}) {
+	switch l {
+	case LvlTrace:
+		Trace(msg, ctx...)
+	case LvlDebug:
+		Debug(msg, ctx...)
+	case LvlInfo:
+		Info(msg, ctx...)
+	case LvlWarn:
+		Warn(msg, ctx...)
+	case LvlError:
+		Error(msg, ctx...)
+	case LvlCrit:
+		Crit(msg, ctx...)
+	default:
+		panic("bad level")
+	}
+}
