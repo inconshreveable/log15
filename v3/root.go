@@ -72,7 +72,8 @@ func Crit(msg string, ctx ...interface{}) {
 	root.write(msg, LvlCrit, ctx)
 }
 
-func Level(l Lvl, msg string, ctx ...interface{}) {
+// Log method to route configurable log level
+func Log(l Lvl, msg string, ctx ...interface{}) {
 	switch l {
 	case LvlTrace:
 		Trace(msg, ctx...)
