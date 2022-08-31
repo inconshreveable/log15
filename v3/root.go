@@ -91,3 +91,10 @@ func Log(l Lvl, msg string, ctx ...interface{}) {
 		panic("bad level")
 	}
 }
+
+// SetRootHandler recreates root logger and set h as multihandler along with existed root handler
+func SetRootHandler(h Handler) {
+	oldHandler := root.GetHandler()
+	root = &logger{[]interface{}{}, new(swapHandler)}
+	root.SetHandler(MultiHandler(oldHandler, h))
+}

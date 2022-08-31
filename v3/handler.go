@@ -59,16 +59,50 @@ func SyncHandler(h Handler) Handler {
 	})
 }
 
+const DefaultLogMaxSize = 1 << 27 // 128 Mb
+
 // FileHandler returns a handler which writes log records to the give file
 // using the given format. If the path
 // already exists, FileHandler will append to the given file. If it does not,
 // FileHandler will create the file with mode 0644.
-func FileHandler(path string, fmtr Format) (Handler, error) {
+func FileHandler(path string, fmtr Format, maxFileSize uint64) (Handler, error) {
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return nil, err
 	}
-	return closingHandler{f, StreamHandler(f, fmtr)}, nil
+	rotating := &rotatingWriter{
+		file:       f,
+		logMaxSize: maxFileSize,
+	}
+	return closingHandler{rotating, StreamHandler(rotating, fmtr)}, nil
+}
+
+type rotatingWriter struct {
+	file       *os.File
+	logMaxSize uint64
+}
+
+// Write checks if current log size + expected write size is larger than limit.
+// If limit outreached, file is truncated then write is called.
+func (r *rotatingWriter) Write(p []byte) (n int, err error) {
+	info, err := r.file.Stat()
+	if uint64(info.Size())+uint64(len(p)) > r.logMaxSize {
+		if err := r.file.Truncate(0); err != nil {
+			return 0, fmt.Errorf("rotating log %q truncating: %w", r.file.Name(), err)
+		}
+	}
+	n, err = r.file.Write(p)
+	if err != nil {
+		return 0, fmt.Errorf("rotating log %q write: %w", r.file.Name(), err)
+	}
+	if err := r.file.Sync(); err != nil {
+		return 0, fmt.Errorf("rotating log %q sync: %w", r.file.Name(), err)
+	}
+	return n, nil
+}
+
+func (r *rotatingWriter) Close() error {
+	return r.file.Close()
 }
 
 // NetHandler opens a socket to the given address and writes records
@@ -346,7 +380,7 @@ func must(h Handler, err error) Handler {
 type muster struct{}
 
 func (m muster) FileHandler(path string, fmtr Format) Handler {
-	return must(FileHandler(path, fmtr))
+	return must(FileHandler(path, fmtr, DefaultLogMaxSize))
 }
 
 func (m muster) NetHandler(network, addr string, fmtr Format) Handler {
