@@ -50,6 +50,8 @@ func (l Lvl) String() string {
 // Useful for parsing command line args and configuration files.
 func LvlFromString(lvlString string) (Lvl, error) {
 	switch lvlString {
+	case "trace":
+		return LvlTrace, nil
 	case "debug", "dbug":
 		return LvlDebug, nil
 	case "info":
