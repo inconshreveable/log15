@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/mattn/go-colorable"
-	isatty "github.com/mattn/go-isatty"
+	"golang.org/x/term"
 )
 
 // Predefined handlers
@@ -15,11 +15,11 @@ var (
 )
 
 func init() {
-	if isatty.IsTerminal(os.Stdout.Fd()) {
+	if term.IsTerminal(int(os.Stdout.Fd())) {
 		StdoutHandler = StreamHandler(colorable.NewColorableStdout(), TerminalFormat())
 	}
 
-	if isatty.IsTerminal(os.Stderr.Fd()) {
+	if term.IsTerminal(int(os.Stderr.Fd())) {
 		StderrHandler = StreamHandler(colorable.NewColorableStderr(), TerminalFormat())
 	}
 
