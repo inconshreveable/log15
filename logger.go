@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/go-stack/stack"
 )
 
 const timeKey = "t"
@@ -73,8 +71,7 @@ type Record struct {
 	Lvl      Lvl
 	Msg      string
 	Ctx      []interface{}
-	Call     stack.Call
-	KeyNames RecordKeyNames
+	KeyNames *RecordKeyNames
 }
 
 // RecordKeyNames are the predefined names of the log props used by the Logger interface.
@@ -82,6 +79,12 @@ type RecordKeyNames struct {
 	Time string
 	Msg  string
 	Lvl  string
+}
+
+var DefaultRecordKeyNames = &RecordKeyNames{
+	Time: timeKey,
+	Msg:  msgKey,
+	Lvl:  lvlKey,
 }
 
 // A Logger writes key/value pairs to a Handler
@@ -109,17 +112,12 @@ type logger struct {
 }
 
 func (l *logger) write(msg string, lvl Lvl, ctx []interface{}) {
-	l.h.Log(&Record{
-		Time: time.Now(),
-		Lvl:  lvl,
-		Msg:  msg,
-		Ctx:  newContext(l.ctx, ctx),
-		Call: stack.Caller(2),
-		KeyNames: RecordKeyNames{
-			Time: timeKey,
-			Msg:  msgKey,
-			Lvl:  lvlKey,
-		},
+	l.h.Log(Record{
+		Time:     time.Now(),
+		Lvl:      lvl,
+		Msg:      msg,
+		Ctx:      newContext(l.ctx, ctx),
+		KeyNames: DefaultRecordKeyNames,
 	})
 }
 
