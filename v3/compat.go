@@ -1,52 +1,73 @@
 package log15
 
-type LegacyHandler interface {
-	Log(r *Record) error
-}
-
-type LegacyLogger interface {
-	New(ctx ...interface{}) LegacyLogger
-
-	GetHandler() LegacyHandler
-
-	SetHandler(h LegacyHandler)
-
-	Debug(msg string, ctx ...interface{})
-	Info(msg string, ctx ...interface{})
-	Warn(msg string, ctx ...interface{})
-	Error(msg string, ctx ...interface{})
-	Crit(msg string, ctx ...interface{})
-}
+import (
+	legacy "github.com/inconshreveable/log15"
+)
 
 type compat struct {
 	Handler
 	Logger
 }
 
-func (c *compat) Log(r *Record) error {
-	return c.Handler.Log(*r)
+func fromLegacyRecord(r *legacy.Record) Record {
+	return Record{
+		Time: r.Time,
+		Lvl:  Lvl(r.Lvl),
+		Msg:  r.Msg,
+		Ctx:  r.Ctx,
+		KeyNames: &RecordKeyNames{
+			Lvl:  r.KeyNames.Lvl,
+			Msg:  r.KeyNames.Msg,
+			Time: r.KeyNames.Time,
+		},
+	}
 }
 
-func (c *compat) GetHandler() LegacyHandler {
+func toLegacyRecord(r Record) *legacy.Record {
+	var keyNames legacy.RecordKeyNames
+	if r.KeyNames != nil {
+		keyNames.Lvl = r.KeyNames.Lvl
+		keyNames.Msg = r.KeyNames.Msg
+		keyNames.Time = r.KeyNames.Time
+	}
+	return &legacy.Record{
+		Time:     r.Time,
+		Lvl:      legacy.Lvl(r.Lvl),
+		Msg:      r.Msg,
+		Ctx:      r.Ctx,
+		KeyNames: keyNames,
+	}
+}
+
+func (c *compat) Log(r *legacy.Record) error {
+	return c.Handler.Log(fromLegacyRecord(r))
+}
+
+func (c *compat) GetHandler() legacy.Handler {
 	return &compat{Handler: c.Logger.GetHandler()}
 }
 
-func (c *compat) SetHandler(h LegacyHandler) {
+func (c *compat) SetHandler(h legacy.Handler) {
 	c.Logger.SetHandler(FuncHandler(func(r Record) error {
-		return h.Log(&r)
+		return h.Log(toLegacyRecord(r))
 	}))
 }
 
-func (c *compat) New(args ...interface{}) LegacyLogger {
+func (c *compat) New(args ...interface{}) legacy.Logger {
 	return &compat{Logger: c.Logger.New(args...)}
 }
 
 // CompatHandler wraps a handler for use with pre-v3 log15.Handler consumers.
-func CompatHandler(h Handler) LegacyHandler {
+func CompatHandler(h Handler) legacy.Handler {
 	return &compat{Handler: h}
 }
 
 // CompatHandler wraps a handler for use with pre-v3 log15.Handler consumers.
-func CompatLogger(l Logger) LegacyLogger {
+func CompatLogger(l Logger) legacy.Logger {
 	return &compat{Logger: l}
 }
+
+var _ interface {
+	legacy.Logger
+	legacy.Handler
+} = (*compat)(nil)
