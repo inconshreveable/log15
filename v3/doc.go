@@ -17,7 +17,7 @@ Getting Started
 
 To get started, you'll want to import the library:
 
-    import log "github.com/inconshreveable/log15"
+    import log "github.com/inconshreveable/log15/v3"
 
 
 Now you're ready to start logging:
@@ -224,7 +224,7 @@ by default and to provide a public Logger instance that consumers of your librar
 
     package yourlib
 
-    import "github.com/inconshreveable/log15"
+    import "github.com/inconshreveable/log15/v3"
 
     var Log = log.New()
 
@@ -234,7 +234,7 @@ by default and to provide a public Logger instance that consumers of your librar
 
 Users of your library may then enable it if they like:
 
-    import "github.com/inconshreveable/log15"
+    import "github.com/inconshreveable/log15/v3"
     import "example.com/yourlib"
 
     func main() {

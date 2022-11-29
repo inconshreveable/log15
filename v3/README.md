@@ -21,7 +21,7 @@ you must vendor the library.
 ## Importing
 
 ```go
-import log "github.com/inconshreveable/log15"
+import log "github.com/inconshreveable/log15/v3"
 ```
 
 ## Examples
