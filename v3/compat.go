@@ -62,11 +62,12 @@ func CompatHandler(h Handler) legacy.Handler {
 	return &compat{Handler: h}
 }
 
-// CompatHandler wraps a handler for use with pre-v3 log15.Handler consumers.
+// CompatLogger wraps a Logger for use with pre-v3 log15.Logger consumers.
 func CompatLogger(l Logger) legacy.Logger {
 	return &compat{Logger: l}
 }
 
+// Interface assertions to make sure we got everything right
 var _ interface {
 	legacy.Logger
 	legacy.Handler
