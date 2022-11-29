@@ -2,15 +2,16 @@ package ext
 
 import (
 	"errors"
-	log "github.com/inconshreveable/log15/v3"
 	"math"
 	"testing"
+
+	log "github.com/inconshreveable/log15/v3"
 )
 
 func testHandler() (log.Handler, *log.Record) {
 	rec := new(log.Record)
-	return log.FuncHandler(func(r *log.Record) error {
-		*rec = *r
+	return log.FuncHandler(func(r log.Record) error {
+		*rec = r
 		return nil
 	}), rec
 }
@@ -43,7 +44,7 @@ func TestSpeculativeHandler(t *testing.T) {
 	// test with an even multiple of the buffer size, less than full buffer size
 	// and not a multiple of the buffer size
 	for _, count := range []int{10000, 50, 432} {
-		recs := make(chan *log.Record)
+		recs := make(chan log.Record)
 		done := make(chan int)
 		spec := SpeculativeHandler(100, log.ChannelHandler(recs))
 
