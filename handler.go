@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/go-stack/stack"
+	"github.com/inconshreveable/log15/gelf"
 )
 
 // Handler interface defines where and how log records are written.
@@ -68,6 +69,70 @@ func FileHandler(path string, fmtr Format) (Handler, error) {
 		return nil, err
 	}
 	return closingHandler{f, StreamHandler(f, fmtr)}, nil
+}
+
+// Handler sends logs to Graylog in GELF.
+type gelfHandler struct {
+	gelfWriter *gelf.Writer
+	host       string
+}
+
+// GelfHandler returns a handler that writes GELF messages to a service at gelfAddr. It is already wrapped
+// in log15's CallerFileHandler and SyncHandler helpers. Its error is non-nil if there
+// is a problem creating the GELF writer or determining our hostname.
+// address is in teh format host:port.
+//
+//     log.GelfHandler("myhost:12201")
+//
+func GelfHandler(address string) (Handler, error) {
+	w, err := gelf.NewWriter(address)
+	if err != nil {
+		return nil, err
+	}
+
+	host, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+
+	return CallerFileHandler(LazyHandler(SyncHandler(gelfHandler{
+		gelfWriter: w,
+		host:       host,
+	}))), nil
+}
+
+// Log forwards a log message to the specified receiver.
+func (h gelfHandler) Log(r *Record) error {
+
+	// extract gelf-specific messages
+	short, full := gelf.ShortAndFull(r.Msg)
+	ctx := gelf.CtxToMap(r.Ctx)
+	callerFile, callerLine := gelf.Caller(ctx)
+	delete(ctx, "_caller")
+
+	m := &gelf.Message{
+		Version:  "1.1",
+		Host:     h.host,
+		Short:    short,
+		Full:     full,
+		TimeUnix: float64(r.Time.UnixNano()/1000000) / 1000., // seconds with millis from record
+		//TimeUnix: float64(r.Time.UnixNano())/1e9 ,		// full timestamp
+		Level: log15LevelsToSyslog[r.Lvl],
+		File:  callerFile,
+		Line:  callerLine,
+		Extra: ctx,
+	}
+
+	return h.gelfWriter.WriteMessage(m)
+}
+
+// source: http://www.cisco.com/c/en/us/td/docs/security/asa/syslog-guide/syslogs/logsevp.html
+var log15LevelsToSyslog = map[Lvl]int32{
+	LvlCrit:  2,
+	LvlError: 3,
+	LvlWarn:  4,
+	LvlInfo:  6,
+	LvlDebug: 7,
 }
 
 // NetHandler opens a socket to the given address and writes records
@@ -346,6 +411,10 @@ type muster struct{}
 
 func (m muster) FileHandler(path string, fmtr Format) Handler {
 	return must(FileHandler(path, fmtr))
+}
+
+func (m muster) GelfHandler(address string) Handler {
+	return must(GelfHandler(address))
 }
 
 func (m muster) NetHandler(network, addr string, fmtr Format) Handler {
