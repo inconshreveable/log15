@@ -39,12 +39,11 @@ func (f formatFunc) Format(r Record) []byte {
 // a terminal with color-coded level output and terser human friendly timestamp.
 // This format should only be used for interactive programs or while developing.
 //
-//     [TIME] [LEVEL] MESSAGE key=value key=value ...
+//	[TIME] [LEVEL] MESSAGE key=value key=value ...
 //
 // Example:
 //
-//     [May 16 20:58:45] [DBUG] remove route ns=haproxy addr=127.0.0.1:50002
-//
+//	[May 16 20:58:45] [DBUG] remove route ns=haproxy addr=127.0.0.1:50002
 func TerminalFormat() Format {
 	return FormatFunc(func(r Record) []byte {
 		var color = 0
@@ -84,7 +83,6 @@ func TerminalFormat() Format {
 // format for key/value pairs.
 //
 // For more details see: http://godoc.org/github.com/kr/logfmt
-//
 func LogfmtFormat() Format {
 	return FormatFunc(func(r Record) []byte {
 		common := []interface{}{r.KeyNames.Time, r.Time, r.KeyNames.Lvl, r.Lvl, r.KeyNames.Msg, r.Msg}
