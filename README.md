@@ -4,6 +4,40 @@
 
 Package log15 provides an opinionated, simple toolkit for best-practice logging in Go (golang) that is both human and machine readable. It is modeled after the Go standard library's [`io`](http://golang.org/pkg/io/) and [`net/http`](http://golang.org/pkg/net/http/) packages and is an alternative to the standard library's [`log`](http://golang.org/pkg/log/) package.
 
+## v3 upgrade
+
+Version 3 compiles with Go modules. It also provides some basic simplifications:
+
+- For performance, the `Call` property has been removed from a `log15.Record`.
+
+- The CallerStackHandler, CallerFuncHandler, and CallerFileHandler
+  have been removed (all three relied on the `Call` property).
+
+- The `term` subpackage has been removed (there are multiple better replacements
+  you can use now).
+
+In most cases, however, it should be sufficient to just change your import path:
+
+```patch
+- import log "github.com/inconshreveable/log15"
++ import log "github.com/inconshreveable/log15/v3"
+```
+
+A lot has happened since log15 was released; you may find the `log/slog` package
+in the standard library to be a better fit for your use case.
+
+Development of the `v3` branch happens in the `v3` subdirectory.
+
+We also added a compatibility layer, which allows existing code to use the v3
+library, so you can incrementally migrate.
+
+```go
+import compat "github.com/inconshreveable/log15/compat"
+```
+
+- `compat.CompatHandler` takes a v3 Handler, and returns a legacy log15 Handler.
+- `compat.CompatLogger` does the same with the Logger type.
+
 ## Features
 - A simple, easy-to-understand API
 - Promotes structured logging by encouraging use of key/value pairs

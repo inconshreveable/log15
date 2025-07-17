@@ -1,21 +1,36 @@
-package log15
+// This file provides backwards compatibility with pre-v3 log15 code.
+//
+// The compatibility layer allows existing code that uses the legacy log15 API
+// to work seamlessly with the v3 version. It provides adapter types and functions
+// that translate between the old and new interfaces, enabling incremental migration
+// from legacy code to the new v3 API.
+//
+// Users may want this when:
+//   - Migrating existing applications to use v3 gradually
+//   - Working with third-party libraries that still use the legacy log15 API
+//   - Maintaining backwards compatibility while adopting new v3 features
+//
+// Use CompatHandler() and CompatLogger() to wrap v3 types for legacy code.
+
+package compat
 
 import (
 	legacy "github.com/inconshreveable/log15"
+	"github.com/inconshreveable/log15/v3"
 )
 
 type compat struct {
-	Handler
-	Logger
+	log15.Handler
+	log15.Logger
 }
 
-func fromLegacyRecord(r *legacy.Record) Record {
-	return Record{
+func fromLegacyRecord(r *legacy.Record) log15.Record {
+	return log15.Record{
 		Time: r.Time,
-		Lvl:  Lvl(r.Lvl),
+		Lvl:  log15.Lvl(r.Lvl),
 		Msg:  r.Msg,
 		Ctx:  r.Ctx,
-		KeyNames: &RecordKeyNames{
+		KeyNames: &log15.RecordKeyNames{
 			Lvl:  r.KeyNames.Lvl,
 			Msg:  r.KeyNames.Msg,
 			Time: r.KeyNames.Time,
@@ -23,7 +38,7 @@ func fromLegacyRecord(r *legacy.Record) Record {
 	}
 }
 
-func toLegacyRecord(r Record) *legacy.Record {
+func toLegacyRecord(r log15.Record) *legacy.Record {
 	var keyNames legacy.RecordKeyNames
 	if r.KeyNames != nil {
 		keyNames.Lvl = r.KeyNames.Lvl
@@ -48,7 +63,7 @@ func (c *compat) GetHandler() legacy.Handler {
 }
 
 func (c *compat) SetHandler(h legacy.Handler) {
-	c.Logger.SetHandler(FuncHandler(func(r Record) error {
+	c.Logger.SetHandler(log15.FuncHandler(func(r log15.Record) error {
 		return h.Log(toLegacyRecord(r))
 	}))
 }
@@ -58,12 +73,12 @@ func (c *compat) New(args ...interface{}) legacy.Logger {
 }
 
 // CompatHandler wraps a handler for use with pre-v3 log15.Handler consumers.
-func CompatHandler(h Handler) legacy.Handler {
+func CompatHandler(h log15.Handler) legacy.Handler {
 	return &compat{Handler: h}
 }
 
 // CompatLogger wraps a Logger for use with pre-v3 log15.Logger consumers.
-func CompatLogger(l Logger) legacy.Logger {
+func CompatLogger(l log15.Logger) legacy.Logger {
 	return &compat{Logger: l}
 }
 

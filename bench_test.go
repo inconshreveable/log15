@@ -1,3 +1,4 @@
+//go:build go1.3
 // +build go1.3
 
 package log15
@@ -31,33 +32,49 @@ func BenchmarkDiscard(b *testing.B) {
 	}
 }
 
+func BenchmarkCallerFileHandler(b *testing.B) {
+	lg := New()
+	lg.SetHandler(CallerFileHandler(DiscardHandler()))
+
+	for i := 0; i < b.N; i++ {
+		lg.Info("test message")
+	}
+}
+
+func BenchmarkCallerFuncHandler(b *testing.B) {
+	lg := New()
+	lg.SetHandler(CallerFuncHandler(DiscardHandler()))
+
+	for i := 0; i < b.N; i++ {
+		lg.Info("test message")
+	}
+}
+
 func BenchmarkLogfmtNoCtx(b *testing.B) {
 	r := Record{
-		Time:     time.Now(),
-		Lvl:      LvlInfo,
-		Msg:      "test message",
-		Ctx:      []interface{}{},
-		KeyNames: DefaultRecordKeyNames,
+		Time: time.Now(),
+		Lvl:  LvlInfo,
+		Msg:  "test message",
+		Ctx:  []interface{}{},
 	}
 
 	logfmt := LogfmtFormat()
 	for i := 0; i < b.N; i++ {
-		logfmt.Format(r)
+		logfmt.Format(&r)
 	}
 }
 
 func BenchmarkJsonNoCtx(b *testing.B) {
 	r := Record{
-		Time:     time.Now(),
-		Lvl:      LvlInfo,
-		Msg:      "test message",
-		Ctx:      []interface{}{},
-		KeyNames: DefaultRecordKeyNames,
+		Time: time.Now(),
+		Lvl:  LvlInfo,
+		Msg:  "test message",
+		Ctx:  []interface{}{},
 	}
 
 	jsonfmt := JsonFormat()
 	for i := 0; i < b.N; i++ {
-		jsonfmt.Format(r)
+		jsonfmt.Format(&r)
 	}
 }
 
@@ -188,33 +205,4 @@ func BenchmarkLog15WithoutFields(b *testing.B) {
 			logger.Info("Go fast.")
 		}
 	})
-}
-
-func BenchmarkDefaultWarn(b *testing.B) {
-	logger := New("source", "default", "partition", 3)
-	logger.SetHandler(newHandler())
-	b.ReportAllocs()
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Warn("warn message")
-		}
-	})
-}
-func BenchmarkDefaultDebug(b *testing.B) {
-	logger := New("source", "default", "partition", 3)
-	logger.SetHandler(newHandler())
-	b.ReportAllocs()
-	b.ResetTimer()
-	b.RunParallel(func(pb *testing.PB) {
-		for pb.Next() {
-			logger.Debug("debug message")
-		}
-	})
-}
-func newHandler() Handler {
-	lvl := LvlWarn
-	logformat := LogfmtFormat()
-	handler := StreamHandler(ioutil.Discard, logformat)
-	return LvlFilterHandler(lvl, handler)
 }
