@@ -21,6 +21,12 @@ jobs:
         echo "PATH=$GITHUB_WORKSPACE/bin:$PATH" >> $GITHUB_ENV
     - name: Run tests
       run: |
+        GO111MODULE=on go install github.com/kevinburke/goget@latest
+        goget -https github.com/go-stack/stack
+        goget -https github.com/mattn/go-colorable
+        goget -https golang.org/x/term
+        goget -https github.com/mattn/go-isatty
+        goget -https golang.org/x/sys
         go vet ./...
         go test -race ./...
       working-directory: './src/github.com/inconshreveable/log15'
