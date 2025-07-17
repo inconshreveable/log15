@@ -4,7 +4,7 @@ jobs:
   test:
     strategy:
       matrix:
-        go-version: [1.18.x, 1.19.x]
+        go-version: [1.23.x, 1.24.x]
     runs-on: ubuntu-latest
     steps:
     - name: Install Go
@@ -21,7 +21,6 @@ jobs:
         echo "PATH=$GITHUB_WORKSPACE/bin:$PATH" >> $GITHUB_ENV
     - name: Run tests
       run: |
-        go get -t -d ./...
         go vet ./...
         go test -race ./...
       working-directory: './src/github.com/inconshreveable/log15'
