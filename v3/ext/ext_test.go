@@ -108,3 +108,14 @@ func TestErrorHandler(t *testing.T) {
 		t.Fatalf("Expected debug level message to be escalated to LvlError")
 	}
 }
+
+func TestRandId(t *testing.T) {
+	t.Parallel()
+
+	if id := RandId(8); len(id) != 16 {
+		t.Fatalf("RandId(8) length = %d, want 16", len(id))
+	}
+	if id := RandId(0); id != "" {
+		t.Fatalf("RandId(0) = %q, want empty string", id)
+	}
+}

@@ -2,6 +2,9 @@
 
 ## v3.2.0 - 2026-05-13
 
+- Restored `v3/ext.RandId`, which was accidentally omitted from v3.1.0 and
+  could break upgrades from `v3.0.0-testing.5`. Thanks to Jonathan Stacks for
+  the fix.
 - Removed the `github.com/mattn/go-colorable` dependency from the root and
   `v3` modules. This also removes the transitive
   `github.com/mattn/go-isatty` dependency.
