@@ -4,8 +4,8 @@ go 1.24.0
 
 require (
 	// can't use "replace" directive for this import which is just the parent module
-	github.com/inconshreveable/log15 v2.16.0+incompatible
-	github.com/inconshreveable/log15/v3 v3.0.0-testing.5
+	github.com/inconshreveable/log15 v0.0.0-20260226202544-23f08a1ae593
+	github.com/inconshreveable/log15/v3 v3.1.0
 )
 
 require (

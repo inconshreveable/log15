@@ -3,7 +3,6 @@ package log15
 import (
 	"os"
 
-	"github.com/mattn/go-colorable"
 	"golang.org/x/term"
 )
 
@@ -16,11 +15,11 @@ var (
 
 func init() {
 	if term.IsTerminal(int(os.Stdout.Fd())) {
-		StdoutHandler = StreamHandler(colorable.NewColorableStdout(), TerminalFormat())
+		StdoutHandler = StreamHandler(os.Stdout, TerminalFormat())
 	}
 
 	if term.IsTerminal(int(os.Stderr.Fd())) {
-		StderrHandler = StreamHandler(colorable.NewColorableStderr(), TerminalFormat())
+		StderrHandler = StreamHandler(os.Stderr, TerminalFormat())
 	}
 
 	root = &logger{[]interface{}{}, new(swapHandler)}
