@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v3.2.1 - 2026-05-13
 
 - Restored `v3/ext.RandId`, which was accidentally omitted from v3.1.0 and
   could break upgrades from `v3.0.0-testing.5`. Thanks to Jonathan Stacks for
