@@ -1,12 +1,7 @@
 github.com/go-stack/stack v1.8.1 h1:ntEHSVwIt7PNXNpgPmVfMrNhLtgjlmnZha2kOpuRiDw=
 github.com/go-stack/stack v1.8.1/go.mod h1:dcoOX6HbPZSZptuspn9bctJ+N/CnF5gGygcUP3XYfe4=
-github.com/inconshreveable/log15 v0.0.0-20260226202544-23f08a1ae593 h1:r54VtS1syAHL3eErcsHn8T2nOUUb00EKbwRf1AMfXOA=
-github.com/inconshreveable/log15 v0.0.0-20260226202544-23f08a1ae593/go.mod h1:42bYR/F2ujq7G+m8fbhOMy0MXg16W1DkBVPL8p3W6eY=
-github.com/mattn/go-colorable v0.1.14 h1:9A9LHSqF/7dyVVX6g0U9cwm9pG3kP9gSzcuIPHPsaIE=
-github.com/mattn/go-colorable v0.1.14/go.mod h1:6LmQG8QLFO4G5z1gPvYEzlUgJ2wF+stgPZH1UqBm1s8=
-github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
-github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
-golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+github.com/inconshreveable/log15 v0.0.0-20260513164642-de25451ef092 h1:BV+p2pKJZJhQYqsBpV4rYslYpp4GK8lGgknWvSs++iM=
+github.com/inconshreveable/log15 v0.0.0-20260513164642-de25451ef092/go.mod h1:AFovE2Hxbq9EPtxzigArlx30Pm0kC/bp19wSDnG9W54=
 golang.org/x/sys v0.41.0 h1:Ivj+2Cp/ylzLiEU89QhWblYnOE9zerudt9Ftecq2C6k=
 golang.org/x/sys v0.41.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
 golang.org/x/term v0.40.0 h1:36e4zGLqU4yhjlmxEaagx2KuYbJq3EwY8K943ZsHcvg=
