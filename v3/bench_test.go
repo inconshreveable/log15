@@ -219,3 +219,75 @@ func newHandler() Handler {
 	handler := StreamHandler(ioutil.Discard, logformat)
 	return LvlFilterHandler(lvl, handler)
 }
+
+// Benchmarks targeting fmt.Sprintf allocation hotspots in format.go
+
+func BenchmarkLogfmtWithIntCtx(b *testing.B) {
+	r := Record{
+		Time:     time.Now(),
+		Lvl:      LvlInfo,
+		Msg:      "test message",
+		Ctx:      []interface{}{"count", 42, "size", int64(1024), "code", uint32(200), "offset", uint64(9999)},
+		KeyNames: DefaultRecordKeyNames,
+	}
+	logfmtFmt := LogfmtFormat()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		logfmtFmt.Format(r)
+	}
+}
+
+func BenchmarkLogfmtWithMixedCtx(b *testing.B) {
+	r := Record{
+		Time: time.Now(),
+		Lvl:  LvlInfo,
+		Msg:  "test message",
+		Ctx: []interface{}{
+			"int", 1,
+			"int64", int64(1),
+			"float", 3.0,
+			"string", "four!",
+			"bool", true,
+		},
+		KeyNames: DefaultRecordKeyNames,
+	}
+	logfmtFmt := LogfmtFormat()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		logfmtFmt.Format(r)
+	}
+}
+
+func BenchmarkTerminalFormatNoCtx(b *testing.B) {
+	r := Record{
+		Time:     time.Now(),
+		Lvl:      LvlInfo,
+		Msg:      "test message",
+		Ctx:      []interface{}{},
+		KeyNames: DefaultRecordKeyNames,
+	}
+	termFmt := TerminalFormat()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		termFmt.Format(r)
+	}
+}
+
+func BenchmarkTerminalFormatWithIntCtx(b *testing.B) {
+	r := Record{
+		Time:     time.Now(),
+		Lvl:      LvlInfo,
+		Msg:      "test message",
+		Ctx:      []interface{}{"count", 42, "size", int64(1024), "code", uint32(200)},
+		KeyNames: DefaultRecordKeyNames,
+	}
+	termFmt := TerminalFormat()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		termFmt.Format(r)
+	}
+}

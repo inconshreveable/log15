@@ -63,9 +63,23 @@ func TerminalFormat() Format {
 		b := &bytes.Buffer{}
 		lvl := strings.ToUpper(r.Lvl.String())
 		if color > 0 {
-			fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s] %s ", color, lvl, r.Time.Format(termTimeFormat), r.Msg)
+			b.WriteString("\x1b[")
+			b.WriteString(strconv.Itoa(color))
+			b.WriteString("m")
+			b.WriteString(lvl)
+			b.WriteString("\x1b[0m[")
+			b.WriteString(r.Time.Format(termTimeFormat))
+			b.WriteString("] ")
+			b.WriteString(r.Msg)
+			b.WriteByte(' ')
 		} else {
-			fmt.Fprintf(b, "[%s] [%s] %s ", lvl, r.Time.Format(termTimeFormat), r.Msg)
+			b.WriteByte('[')
+			b.WriteString(lvl)
+			b.WriteString("] [")
+			b.WriteString(r.Time.Format(termTimeFormat))
+			b.WriteString("] ")
+			b.WriteString(r.Msg)
+			b.WriteByte(' ')
 		}
 
 		// try to justify the log output for short messages
@@ -106,7 +120,12 @@ func logfmt(buf *bytes.Buffer, ctx []interface{}, color int) {
 
 		// XXX: we should probably check that all of your key bytes aren't invalid
 		if color > 0 {
-			fmt.Fprintf(buf, "\x1b[%dm%s\x1b[0m=%s", color, k, v)
+			buf.WriteString("\x1b[")
+			buf.WriteString(strconv.Itoa(color))
+			buf.WriteString("m")
+			buf.WriteString(k)
+			buf.WriteString("\x1b[0m=")
+			buf.WriteString(v)
 		} else {
 			buf.WriteString(k)
 			buf.WriteByte('=')
@@ -224,8 +243,26 @@ func formatLogfmtValue(value interface{}) string {
 		return strconv.FormatFloat(float64(v), floatFormat, 3, 64)
 	case float64:
 		return strconv.FormatFloat(v, floatFormat, 3, 64)
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		return fmt.Sprintf("%d", value)
+	case int:
+		return strconv.Itoa(v)
+	case int8:
+		return strconv.FormatInt(int64(v), 10)
+	case int16:
+		return strconv.FormatInt(int64(v), 10)
+	case int32:
+		return strconv.FormatInt(int64(v), 10)
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case uint:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint8:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint16:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint32:
+		return strconv.FormatUint(uint64(v), 10)
+	case uint64:
+		return strconv.FormatUint(v, 10)
 	case string:
 		return escapeString(v)
 	default:
