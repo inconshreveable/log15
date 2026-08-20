@@ -1,6 +1,6 @@
 /*
 Package log15 provides an opinionated, simple toolkit for best-practice logging that is
-both human and machine readable. It is modeled after the standard library's io and net/http
+both human and machine-readable. It is modeled after the standard library's io and net/http
 packages.
 
 This package enforces you to only log key/value pairs. Keys must be strings. Values may be
@@ -82,7 +82,7 @@ or above in JSON formatted output to the file /var/log/service.json
 
 	handler := log.MultiHandler(
 	    log.LvlFilterHandler(log.LvlError, log.Must.FileHandler("/var/log/service.json", log.JsonFormat())),
-	    log.MatchFilterHandler("pkg", "app/rpc" log.StdoutHandler())
+	    log.MatchFilterHandler("pkg", "app/rpc", log.StdoutHandler())
 	)
 
 # Logging File Names and Line Numbers
@@ -132,7 +132,7 @@ fails you want to log those records to a file on disk.
 	func (h *BackupHandler) Log (r *Record) error {
 	    err := h.Primary.Log(r)
 	    if err != nil {
-	        r.Ctx = append(ctx, "primary_err", err)
+	        r.Ctx = append(r.Ctx, "primary_err", err)
 	        return h.Secondary.Log(r)
 	    }
 	    return nil
