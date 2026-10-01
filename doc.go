@@ -99,7 +99,7 @@ the context.
 
 This will output a line that looks like:
 
-	lvl=eror t=2014-05-02T16:07:23-0700 msg="open file" err="file not found" caller=data.go:42
+	lvl=eror t=2014-05-02T16:07:23-0700 msg="open file" err="file not found" caller=pkg/data.go:42
 
 Here's an example that logs the call stack rather than just the call site.
 

@@ -97,7 +97,7 @@ func (h *closingHandler) Close() error {
 // the calling function to the context with key "caller".
 func CallerFileHandler(h Handler) Handler {
 	return FuncHandler(func(r *Record) error {
-		r.Ctx = append(r.Ctx, "caller", fmt.Sprint(r.Call))
+		r.Ctx = append(r.Ctx, "caller", fmt.Sprintf("%+v", r.Call))
 		return h.Log(r)
 	})
 }

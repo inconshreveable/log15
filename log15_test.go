@@ -468,9 +468,14 @@ func TestCallerFileHandler(t *testing.T) {
 		t.Fatalf("Wrong context value type, got %T expected string", r.Ctx[1])
 	}
 
-	exp := fmt.Sprint("log15_test.go:", line-1)
-	if s != exp {
-		t.Fatalf("Wrong context value, got %s expected string matching %s", s, exp)
+	regex := fmt.Sprintf(`.+/log15_test\.go:%d`, line-1)
+	match, err := regexp.MatchString(regex, s)
+	if err != nil {
+		t.Fatalf("Error matching %s to regex %s: %v", s, regex, err)
+	}
+
+	if !match {
+		t.Fatalf("Wrong context value, got %s expected string matching %s", s, regex)
 	}
 }
 
