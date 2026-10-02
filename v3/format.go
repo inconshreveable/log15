@@ -101,7 +101,7 @@ func logfmt(buf *bytes.Buffer, ctx []interface{}, color int) {
 		k, ok := ctx[i].(string)
 		v := formatLogfmtValue(ctx[i+1])
 		if !ok {
-			k, v = errorKey, formatLogfmtValue(k)
+			k, v = errorKey, formatLogfmtValue(fmt.Sprintf("%+v is not a string key", ctx[i]))
 		}
 
 		// XXX: we should probably check that all of your key bytes aren't invalid
